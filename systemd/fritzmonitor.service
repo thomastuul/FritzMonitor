@@ -1,0 +1,12 @@
+[Unit]
+Description=FRITZ!Box desktop event monitor
+After=graphical-session.target network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/fritzmonitor
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=default.target
