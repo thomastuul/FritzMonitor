@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly repo_root
 readonly image="fritzmonitor-markdown-tools:local"
-readonly markdown_files=(README.md FRITZMONITOR.md QUICK-SETUP.md COPYRIGHT.md)
+readonly markdown_files=(README.md FRITZMONITOR.md QUICK-SETUP.md COPYRIGHT.md AGENTS.md)
 
 usage() {
   echo "Usage: $0 check|format" >&2

@@ -8,4 +8,4 @@ RUN npm ci --ignore-scripts \
 ENV PATH="/tools/node_modules/.bin:${PATH}"
 WORKDIR /workspace
 
-CMD ["markdownlint-cli2", "README.md", "FRITZMONITOR.md", "QUICK-SETUP.md", "COPYRIGHT.md"]
+CMD ["markdownlint-cli2", "README.md", "FRITZMONITOR.md", "QUICK-SETUP.md", "COPYRIGHT.md", "AGENTS.md"]

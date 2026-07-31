@@ -172,8 +172,8 @@ markdownlint-Regeln prüfen:
 ./scripts/markdown-in-container.sh check
 ```
 
-Prettier auf `README.md`, `FRITZMONITOR.md`, `QUICK-SETUP.md` und `COPYRIGHT.md`
-anwenden und anschließend markdownlint ausführen:
+Prettier auf `README.md`, `FRITZMONITOR.md`, `QUICK-SETUP.md`, `COPYRIGHT.md`
+und `AGENTS.md` anwenden und anschließend markdownlint ausführen:
 
 ```sh
 ./scripts/markdown-in-container.sh format
