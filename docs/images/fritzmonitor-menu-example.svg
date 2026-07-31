@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="210" viewBox="0 0 520 210">
+  <rect width="520" height="210" rx="8" fill="#282a36"/>
+  <rect x="1" y="1" width="518" height="208" rx="8" fill="none" stroke="#6272a4" stroke-width="2"/>
+  <text x="22" y="31" fill="#f8f8f2" font-family="sans-serif" font-size="16">Verbunden mit FRITZ!Box</text>
+  <line x1="18" y1="48" x2="502" y2="48" stroke="#6272a4"/>
+  <text x="22" y="82" fill="#f8f8f2" font-family="sans-serif" font-size="16">030 5551234 · 08:42 · Verpasst</text>
+  <text x="22" y="123" fill="#f8f8f2" font-family="sans-serif" font-size="16">089 4027186 · 08:17 · Angenommen</text>
+  <text x="22" y="164" fill="#f8f8f2" font-family="sans-serif" font-size="16">040 7712345 · 07:55 · Verpasst</text>
+  <line x1="18" y1="181" x2="502" y2="181" stroke="#6272a4"/>
+  <text x="22" y="201" fill="#f8f8f2" font-family="sans-serif" font-size="15">Beenden</text>
+</svg>
