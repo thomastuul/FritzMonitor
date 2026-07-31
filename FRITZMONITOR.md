@@ -48,4 +48,18 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Für die vollständige Desktop-Integration werden auf Debian/Ubuntu zusätzlich GLib/GIO, libnotify und Ayatana AppIndicator benötigt.
+Der verbindliche Produktiv-Build läuft im Container. Die Entwicklungs-
+abhängigkeiten werden nur im Builder-Container installiert; das geprüfte
+Binary läuft anschließend nativ auf dem Host mit den dort vorhandenen
+Runtime-Bibliotheken:
+
+```sh
+./scripts/container-build.sh
+```
+
+Die Artefakte werden unter `build/container-release/` abgelegt. Für die
+native Desktop-Integration benötigt der Host die Runtime-Pakete für GLib/GIO,
+GTK 3, libnotify und Ayatana AppIndicator, aber keine `*-dev`-Pakete.
+
+Für die vollständige Desktop-Integration werden auf Debian/Ubuntu die oben
+genannten Runtime-Bibliotheken benötigt.

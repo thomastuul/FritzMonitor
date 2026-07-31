@@ -35,6 +35,11 @@ std::optional<CallEvent> parse_callmonitor_line(const std::string& line) {
   while (!fields.back().empty() && (fields.back().back() == '\r' || fields.back().back() == '\n'))
     fields.back().pop_back();
 
+  // The FRITZ!Box prepends live Callmonitor events with a timestamp, e.g.
+  // "31.07.26 07:33:10;RING;2;...". Keep accepting the unprefixed format
+  // used by older integrations and by the simulation path.
+  if (fields[0].find(' ') != std::string::npos) fields.erase(fields.begin());
+
   const auto now = std::chrono::system_clock::now();
   if (fields[0] == "RING" && fields.size() >= 4)
     return CallEvent{EventType::Ring, fields[1], fields[2], fields[3], now};
