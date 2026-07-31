@@ -60,6 +60,8 @@ void quit_application(GtkWidget*, gpointer) { gtk_main_quit(); }
 GtkWidget* history_menu = nullptr;
 AppIndicator* indicator = nullptr;
 std::deque<GtkWidget*> call_items;
+bool notifications_initialized = false;
+bool notifications_available = false;
 
 void set_indicator_icon(bool has_unread_call) {
   app_indicator_set_icon_full(indicator,
@@ -101,7 +103,21 @@ Desktop::Desktop() {
   int argc = 0;
   char** argv = nullptr;
   gtk_init(&argc, &argv);
-  notify_init("FritzMonitor");
+  notifications_initialized = notify_init("FritzMonitor");
+  if (notifications_initialized) {
+    gchar* server_name = nullptr;
+    gchar* server_vendor = nullptr;
+    gchar* server_version = nullptr;
+    gchar* server_spec = nullptr;
+    notifications_available = notify_get_server_info(&server_name, &server_vendor, &server_version, &server_spec);
+    g_free(server_name);
+    g_free(server_vendor);
+    g_free(server_version);
+    g_free(server_spec);
+  }
+  if (!notifications_available) {
+    std::cerr << "fritzmonitor: desktop notification service unavailable; continuing without notifications\n";
+  }
   indicator = app_indicator_new("fritzmonitor", "fritzmonitor-phone-green", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
   auto* menu = gtk_menu_new();
@@ -124,14 +140,18 @@ Desktop::Desktop() {
 
 Desktop::~Desktop() {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
-  notify_uninit();
+  if (notifications_initialized) notify_uninit();
 #endif
 }
 
 void Desktop::notify(const CallEvent& event) {
   const auto message = message_for(event);
 #ifdef FRITZMONITOR_HAVE_DESKTOP
-  NotifyNotification* notification = notify_notification_new("FritzMonitor", message.c_str(), "phone");
+  if (!notifications_available) return;
+  NotifyNotification* notification = notify_notification_new("FritzMonitor", message.c_str(), "fritzmonitor-phone-green");
+  notify_notification_set_category(notification, "phone.call");
+  notify_notification_set_urgency(notification, NOTIFY_URGENCY_NORMAL);
+  notify_notification_set_timeout(notification, 5000);
   notify_notification_show(notification, nullptr);
   g_object_unref(notification);
 #else

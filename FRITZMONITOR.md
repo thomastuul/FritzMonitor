@@ -14,6 +14,20 @@ Der erste funktionsfähige Umfang konzentriert sich auf Telefonie-Ereignisse üb
 
 Weitere FRITZ!Box-Ereignisse über TR-064/UPnP können später als zusätzliche Adapter ergänzt werden.
 
+## Desktop-Benachrichtigungen
+
+FritzMonitor verwendet die `libnotify`-Bibliothek direkt. Die Benachrichtigung
+wird über D-Bus an den Desktop-Benachrichtigungsdienst gesendet; ein installiertes
+`notify-send` ist nicht erforderlich. `notify-send` und FritzMonitor verwenden
+damit dieselbe standardisierte Benachrichtigungsschnittstelle.
+
+Die Meldungen verwenden den Anwendungsnamen `FritzMonitor`, das installierte
+Telefon-Icon, die Kategorie `phone.call`, normale Dringlichkeit und eine
+Anzeigedauer von fünf Sekunden. Wenn keine D-Bus-Benachrichtigungsinstanz
+verfügbar ist, läuft FritzMonitor ohne Desktop-Meldungen weiter und protokolliert
+dies im User-Journal. Ein Shell-Aufruf von `notify-send` wird nicht als Fallback
+verwendet.
+
 ## Tray-Icon und Anrufstatus
 
 Das Systemtray verwendet ein telefonförmiges FritzMonitor-Icon mit zwei
