@@ -15,10 +15,12 @@ markiert die Anrufe als gelesen.
 
 ## Pulldown-Menü
 
-Das Menü enthält pro Anruf genau eine Zeile. Angezeigt werden Rufnummer,
-Uhrzeit und Status. Es bleiben die letzten drei Anrufe erhalten, der neueste
-steht oben. Namen werden angezeigt, sobald eine Namensauflösung verfügbar ist;
-ansonsten bleibt die Rufnummer sichtbar.
+Das Menü enthält pro Anruf genau eine Zeile. Sie zeigt in dieser Reihenfolge
+einen grünen Telefonhörer für angenommene beziehungsweise einen roten
+Telefonhörer für verpasste Anrufe, Datum und Uhrzeit im Format `12.07. 18:23`
+und anschließend den Namen oder – falls keine Namensauflösung möglich ist –
+die Rufnummer. Es bleiben die letzten drei Anrufe erhalten, der neueste steht
+oben.
 
 ![Beispielansicht des FritzMonitor-Menüs mit anonymisierten Nummern](docs/images/fritzmonitor-menu-example.svg)
 
@@ -70,6 +72,33 @@ Builds ohne Entwicklungssoftware auf dem Host stehen Container-Wrapper bereit:
 ```sh
 ./scripts/package-in-container.sh deb
 ./scripts/package-in-container.sh rpm
+```
+
+Die Wrapper schreiben nach `build/package-deb/` beziehungsweise
+`build/package-rpm/`. Die Pakete können anschließend mit den üblichen
+Systemwerkzeugen installiert werden:
+
+```sh
+sudo apt install ./build/package-deb/fritzmonitor-0.2.0-Linux.deb
+```
+
+Auf Fedora:
+
+```sh
+sudo dnf install ./build/package-rpm/fritzmonitor-0.2.0-Linux.rpm
+```
+
+Nach der Installation wird der User-Service mit systemd aktiviert:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now fritzmonitor.service
+```
+
+Die installierte Version lässt sich prüfen:
+
+```sh
+fritzmonitor --version
 ```
 
 Der produktive Native-Build ohne Paketierung bleibt:
