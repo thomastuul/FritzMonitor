@@ -12,6 +12,10 @@ struct Config {
   int max_events = 20;
   bool notify_incoming = true;
   bool notify_missed = true;
+  bool addressbook_enabled = false;
+  int tr064_port = 49000;
+  std::string tr064_username;
+  std::string tr064_password;
 };
 
 Config load_config(const std::filesystem::path& path);

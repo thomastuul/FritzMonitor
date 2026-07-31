@@ -12,6 +12,8 @@ RUN apt-get update \
        libgtk-3-dev \
        libnotify-dev \
        libayatana-appindicator3-dev \
+       libcurl4-openssl-dev \
+       libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .

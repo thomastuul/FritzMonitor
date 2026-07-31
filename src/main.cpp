@@ -2,6 +2,7 @@
 #include "callmonitor_client.hpp"
 #include "config.hpp"
 #include "desktop.hpp"
+#include "phonebook.hpp"
 
 #include <iostream>
 #include <map>
@@ -25,6 +26,7 @@ int main(int argc, char** argv) {
 
     const auto config = load_config(config_path);
     Desktop desktop;
+    Phonebook phonebook(config);
     std::map<std::string, CallEvent> active_calls;
     auto callback = [&](const CallEvent& raw) {
       auto event = raw;
@@ -39,7 +41,8 @@ int main(int argc, char** argv) {
       } else if (event.type == EventType::Disconnected) {
         if (auto found = active_calls.find(event.connection_id); found != active_calls.end()) {
           const auto answered = found->second.type == EventType::Connected;
-          desktop.record_call(CallSummary{found->second.caller, "", found->second.timestamp, answered});
+          const auto name = phonebook.lookup(found->second.caller);
+          desktop.record_call(CallSummary{found->second.caller, name, found->second.timestamp, answered});
           if (found->second.type == EventType::Ring) {
             found->second.type = EventType::Missed;
             if (config.notify_missed) desktop.notify(found->second);
@@ -55,10 +58,12 @@ int main(int argc, char** argv) {
       callback(*parse_callmonitor_line("DISCONNECT;1;0"));
       return 0;
     }
+    std::thread phonebook_thread([&phonebook] { phonebook.load(); });
     CallmonitorClient client(config, callback);
 #ifdef FRITZMONITOR_HAVE_DESKTOP
     std::thread network_thread([&client] { client.run(); });
     desktop.run();
+    phonebook_thread.join();
     network_thread.detach();
     return 0;
 #else
