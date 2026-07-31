@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
       auto event = raw;
       if (event.type == EventType::Ring) {
         active_calls[event.connection_id] = event;
+        desktop.mark_incoming_call();
         if (config.notify_incoming) desktop.notify(event);
       } else if (event.type == EventType::Connected) {
         if (auto found = active_calls.find(event.connection_id); found != active_calls.end()) {
@@ -37,6 +38,8 @@ int main(int argc, char** argv) {
         }
       } else if (event.type == EventType::Disconnected) {
         if (auto found = active_calls.find(event.connection_id); found != active_calls.end()) {
+          const auto answered = found->second.type == EventType::Connected;
+          desktop.record_call(CallSummary{found->second.caller, "", found->second.timestamp, answered});
           if (found->second.type == EventType::Ring) {
             found->second.type = EventType::Missed;
             if (config.notify_missed) desktop.notify(found->second);
@@ -44,7 +47,6 @@ int main(int argc, char** argv) {
           active_calls.erase(found);
         }
       }
-      desktop.add_event(event);
       std::cerr << event_type_name(event.type) << " connection=" << event.connection_id << '\n';
     };
 

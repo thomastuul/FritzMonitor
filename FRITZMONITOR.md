@@ -14,6 +14,30 @@ Der erste funktionsfähige Umfang konzentriert sich auf Telefonie-Ereignisse üb
 
 Weitere FRITZ!Box-Ereignisse über TR-064/UPnP können später als zusätzliche Adapter ergänzt werden.
 
+## Tray-Icon und Anrufstatus
+
+Das Systemtray verwendet ein telefonförmiges FritzMonitor-Icon mit zwei
+Zuständen:
+
+- Grün: Seit dem Start des Monitors ist kein eingehender Anruf eingegangen
+  oder alle eingegangenen Anrufe wurden durch das Öffnen des Pulldown-Menüs
+  abgefragt.
+- Rot: Seit dem Start ist mindestens ein eingehender Anruf eingegangen, der
+  noch nicht durch das Öffnen des Pulldown-Menüs abgefragt wurde.
+
+Das Öffnen des Pulldown-Menüs bestätigt den aktuellen Anrufstatus und setzt
+das Icon wieder auf Grün. Die grünen und roten SVG-Icons werden zusammen mit
+der nativen Desktop-Binärdatei installiert.
+
+Das Pulldown-Menü zeigt pro Anruf genau eine Zeile mit Rufnummer, Uhrzeit und
+Status (`Angenommen` oder `Verpasst`). Ist ein Name verfügbar, wird er neben
+der Rufnummer angezeigt; andernfalls bleibt die Rufnummer die eindeutige
+Anzeige. Eine Namensauflösung kann optional über das FRITZ!Box-Adressbuch
+erfolgen; wenn keine Auflösung verfügbar ist, darf der Anruf trotzdem nicht
+verworfen werden. Es werden immer nur die letzten drei Anrufe angezeigt, der
+neueste Eintrag steht oben. Bei deutscher Systemlokalisierung sind Menütexte
+und Statusangaben deutsch, ansonsten englisch.
+
 ## Technologie
 
 - C++20
