@@ -122,6 +122,7 @@ git push origin v0.2.0
 ```
 
 Die Attribution steht in [COPYRIGHT.md](COPYRIGHT.md).
+FritzMonitor steht unter der [GNU General Public License Version 3](LICENSE).
 
 ## Entwicklung
 

@@ -89,7 +89,7 @@ install(FILES
   assets/fritzmonitor-phone-red.svg
   DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
 )
-install(FILES COPYRIGHT.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES LICENSE COPYRIGHT.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 set(CPACK_PACKAGE_NAME "fritzmonitor")
 set(CPACK_PACKAGE_VENDOR "Thomas Tuul")
@@ -102,7 +102,7 @@ set(CPACK_DEBIAN_PACKAGE_RELEASE "1")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_RELEASE "1")
-set(CPACK_RPM_PACKAGE_LICENSE "Proprietary")
+set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-only")
 set(CPACK_RPM_PACKAGE_REQUIRES
     "glib2, gtk3, libnotify, libayatana-appindicator-gtk3, libcurl, libxml2")
 set(CPACK_GENERATOR "DEB;RPM")
