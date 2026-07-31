@@ -135,6 +135,21 @@ tr064_username = ""
 tr064_password = "DEIN_FRITZBOX_PASSWORT"
 ```
 
+## Kommandozeile und Diagnose
+
+FritzMonitor unterstützt neben dem normalen Start folgende Optionen:
+
+- `--help` zeigt die verfügbaren Optionen.
+- `--version` gibt die aus CMake übernommene Projektversion aus.
+- `--config PATH` lädt eine alternative TOML-Konfiguration.
+- `--simulate` erzeugt einen simulierten eingehenden und anschließend
+  verpassten Anruf und beendet sich danach. Damit können Parser-, Konfigurations-
+  und grundlegende Desktop-Pfade ohne einen echten Testanruf geprüft werden.
+
+Fehlen die Desktop-Bibliotheken beim Build, wird weiterhin ein Headless-Binary
+für Parser- und Netzwerktests erzeugt. Die vollständige Tray-Funktion benötigt
+die optional erkannten GTK-, libnotify- und AppIndicator-Bibliotheken.
+
 ## Entwicklung
 
 ```sh
@@ -175,6 +190,17 @@ anschließend das jeweilige Paket. Entwicklungsabhängigkeiten werden dabei
 nicht auf dem Produktivsystem benötigt. Für manuell angestoßene Container-
 Builds stehen `scripts/package-in-container.sh deb` und `scripts/package-in-
 container.sh rpm` bereit. Der GitHub-Workflow verwendet dieselben Wrapper.
+
+Die Container-Wrapper legen Debian-Pakete unter `build/package-deb/` und RPM-
+Pakete unter `build/package-rpm/` ab. Debian-Pakete können mit `apt install`
+und RPM-Pakete mit `dnf install` installiert werden. Der User-Service wird
+danach über `systemctl --user enable --now fritzmonitor.service` aktiviert.
+
+Der GitHub-Workflow `.github/workflows/packages.yml` baut beide Pakettypen bei
+jedem Push auf `master` sowie bei manueller Auslösung. Die erzeugten Pakete
+werden als Artefakte des jeweiligen Actions-Laufs bereitgestellt; ein Push auf
+einen normalen Entwicklerbranch oder ein offener PR löst diesen Workflow nicht
+automatisch aus.
 
 Für die vollständige Desktop-Integration werden auf Debian/Ubuntu die oben
 genannten Runtime-Bibliotheken benötigt.
