@@ -4,8 +4,9 @@ FritzMonitor ist ein nativer Linux-Systemtray-Monitor für den FRITZ!Box-
 Callmonitor. Er verbindet sich über TCP mit Port `1012`, meldet eingehende
 Anrufe per Desktop-Benachrichtigung und zeigt den Anrufstatus im Tray.
 
-Version `0.2.0` ist der aktuelle funktionale Entwicklungsstand. FritzMonitor
-wurde erstellt und gestaltet von Thomas Tuul zusammen mit OpenAI Codex.
+Die aktuelle Projektversion steht in `VERSION` und wird von CMake für Binary
+und Pakete übernommen. FritzMonitor wurde erstellt und gestaltet von Thomas
+Tuul zusammen mit OpenAI Codex.
 
 ![Systemtray mit FritzMonitor](docs/images/fritzmonitor-systemtray.png)
 
@@ -111,8 +112,16 @@ Die geprüften Artefakte liegen danach unter `build/container-release/`. Eine
 vollständige technische Beschreibung steht in [FRITZMONITOR.md](FRITZMONITOR.md).
 
 GitHub Actions baut Debian- und Fedora-Pakete bei manueller Auslösung sowie bei
-Pushes auf `master` und legt sie als Workflow-Artefakte ab. Die Attribution
-steht in [COPYRIGHT.md](COPYRIGHT.md).
+Pushes auf `master` und legt sie als Workflow-Artefakte ab. Für einen
+veröffentlichten Release wird ein Versions-Tag wie `v0.2.0` gepusht. Dann hängt
+der Workflow die Pakete automatisch an einen gleichnamigen GitHub-Release an:
+
+```sh
+git tag -a v0.2.0 -m "FritzMonitor 0.2.0"
+git push origin v0.2.0
+```
+
+Die Attribution steht in [COPYRIGHT.md](COPYRIGHT.md).
 
 ## Entwicklung
 

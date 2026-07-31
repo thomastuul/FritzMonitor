@@ -16,8 +16,10 @@
 
 ## Automatische Versionierung
 
-- Die Projektversion wird automatisch nach Semantic Versioning angepasst; eine
-  manuelle Änderung der Versionsnummer in einzelnen Dateien ist zu vermeiden.
+- Die Projektversion wird automatisch nach Semantic Versioning angepasst; die
+  alleinige Quelle der Versionsnummer ist die Datei `VERSION` im Projektroot.
+  Eine Versionsnummer in einzelnen Build-, Quell- oder Dokumentationsdateien
+  darf nicht separat gepflegt werden.
 - Ein Bugfix erhöht die PATCH-Komponente (zum Beispiel `0.2.0` → `0.2.1`).
 - Ein rückwärtskompatibles Feature erhöht die MINOR-Komponente (zum Beispiel
   `0.2.1` → `0.3.0`) und setzt PATCH auf `0`.
@@ -30,3 +32,5 @@
   Paket konsistent verwendet werden. Das distributionsspezifische Paket-
   Release wird unabhängig von der SemVer-Quelle fortlaufend erhöht, wenn
   derselbe Quellstand erneut paketiert wird.
+- Bei einer Versionsänderung wird ausschließlich `VERSION` angepasst; CMake,
+  die Binary-Ausgabe und die Paketmetadaten übernehmen den Wert automatisch.
