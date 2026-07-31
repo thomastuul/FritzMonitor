@@ -1,7 +1,8 @@
 # FritzMonitor Quick Setup
 
 Diese Kurzfassung installiert das fertige Debian-Paket, richtet den
-FRITZ!Box-Zugriff ein und speichert das TR-064-Passwort im GNOME-Keyring.
+FRITZ!Box-Zugriff ein und speichert das TR-064-Passwort vorzugsweise im
+GNOME-Keyring. Dadurch steht es nicht im Klartext in einer Konfigurationsdatei.
 
 ## 1. Voraussetzungen installieren
 
@@ -39,6 +40,14 @@ sudo apt install "./build/package-deb/fritzmonitor-$(cat VERSION)-Linux.deb"
    FRITZ!Box aktivieren. Die genaue Bezeichnung hängt von der FRITZ!OS-Version
    ab.
 
+TR-064 ist die lokale FRITZ!Box-Schnittstelle, über die FritzMonitor bei
+aktivierter Telefonbuchauflösung das Telefonbuch abfragt. Mit
+**TR-064-Passwort** ist das Kennwort des FRITZ!Box-Benutzers gemeint, dessen
+Name später unter `tr064_username` eingetragen wird. Es handelt sich nicht um
+den WLAN-Schlüssel und nicht um ein separates FritzMonitor-Passwort. Der reine
+Callmonitor auf Port `1012` benötigt keine Anmeldung; Benutzername und Kennwort
+werden nur gebraucht, wenn `addressbook_enabled = true` gesetzt ist.
+
 ## 4. Konfiguration anlegen
 
 ```sh
@@ -47,7 +56,7 @@ editor ~/.config/fritzmonitor/config.toml
 chmod 600 ~/.config/fritzmonitor/config.toml
 ```
 
-Minimalbeispiel ohne Klartext-Passwort:
+Empfohlen wird eine Konfiguration ohne Klartext-Passwort:
 
 ```toml
 host = "fritz.box"
@@ -61,7 +70,26 @@ tr064_port = 49000
 tr064_username = "fritzmonitor"
 ```
 
-## 5. Passwort mit Seahorse einrichten
+Das Kennwort wird anschließend wie in Schritt 5 beschrieben im Login-Keyring
+gespeichert. Falls kein Secret Service beziehungsweise GNOME-Keyring verwendet
+werden kann, unterstützt FritzMonitor als Rückfall weiterhin diesen Eintrag:
+
+```toml
+tr064_password = "KENNWORT_DES_FRITZBOX_BENUTZERS"
+```
+
+Diese Variante speichert das Kennwort im Klartext in
+`~/.config/fritzmonitor/config.toml`. Die Dateiberechtigung `0600` beschränkt
+den Zugriff zwar auf den eigenen Benutzer, ersetzt aber keine geschützte
+Passwortverwaltung. Ist `tr064_password` in der Datei gesetzt, verwendet
+FritzMonitor diesen Wert direkt und fragt den Keyring nicht ab.
+
+## 5. Passwort vorzugsweise mit Seahorse einrichten
+
+Seahorse ist die grafische Verwaltung für den GNOME-Keyring. FritzMonitor
+speichert das Kennwort über den Secret Service im Login-Keyring, sodass es nicht
+als Klartext in `config.toml` stehen muss. Diese Variante ist gegenüber dem
+Konfigurations-Fallback zu bevorzugen.
 
 Der Login-Keyring muss in der grafischen Sitzung entsperrt sein. Das Passwort
 wird verdeckt zweimal abgefragt und anschließend über den Secret Service
