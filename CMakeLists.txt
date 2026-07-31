@@ -6,13 +6,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
+include(GNUInstallDirs)
 find_package(PkgConfig QUIET)
 
 set(FRITZMONITOR_DESKTOP_LIBS OFF)
 if(PkgConfig_FOUND)
   pkg_check_modules(GLIB QUIET IMPORTED_TARGET glib-2.0 gio-2.0 gtk+-3.0)
   pkg_check_modules(LIBNOTIFY QUIET IMPORTED_TARGET libnotify)
-  pkg_check_modules(APPINDICATOR QUIET IMPORTED_TARGET ayatana-appindicator-0.1)
+  pkg_check_modules(APPINDICATOR QUIET IMPORTED_TARGET ayatana-appindicator3-0.1)
   if(NOT APPINDICATOR_FOUND)
     pkg_check_modules(APPINDICATOR QUIET IMPORTED_TARGET appindicator-0.1)
   endif()
@@ -56,3 +57,8 @@ endif()
 
 install(TARGETS fritzmonitor RUNTIME DESTINATION bin)
 install(FILES systemd/fritzmonitor.service DESTINATION share/systemd/user)
+install(FILES
+  assets/fritzmonitor-phone-green.svg
+  assets/fritzmonitor-phone-red.svg
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)

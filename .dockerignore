@@ -1,0 +1,6 @@
+.git
+.gitignore
+AGENTS.md
+build
+Dockerfile
+*.swp

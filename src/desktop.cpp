@@ -1,6 +1,11 @@
 #include "desktop.hpp"
 
+#include <cstdlib>
+#include <ctime>
+#include <deque>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #ifdef FRITZMONITOR_HAVE_DESKTOP
@@ -15,9 +20,35 @@ extern "C" {
 namespace fritzmonitor {
 
 namespace {
+bool german_locale() {
+  for (const char* variable : {"LC_ALL", "LC_MESSAGES", "LANG"}) {
+    if (const char* value = std::getenv(variable); value && std::string(value).rfind("de", 0) == 0) return true;
+  }
+  return false;
+}
+
+std::string format_call(const CallSummary& call) {
+  const auto local_time = std::chrono::system_clock::to_time_t(call.timestamp);
+  std::tm time{};
+  localtime_r(&local_time, &time);
+  std::ostringstream output;
+  output << call.caller;
+  if (!call.name.empty()) output << " (" << call.name << ")";
+  output << " - " << std::put_time(&time, "%H:%M") << " - ";
+  output << (german_locale() ? (call.answered ? "Angenommen" : "Verpasst")
+                             : (call.answered ? "Answered" : "Missed"));
+  return output.str();
+}
+
 std::string message_for(const CallEvent& event) {
-  if (event.type == EventType::Ring) return "Eingehender Anruf von " + event.caller;
-  if (event.type == EventType::Missed) return "Verpasster Anruf von " + event.caller;
+  if (event.type == EventType::Ring) {
+    return german_locale() ? "Eingehender Anruf von " + event.caller
+                           : "Incoming call from " + event.caller;
+  }
+  if (event.type == EventType::Missed) {
+    return german_locale() ? "Verpasster Anruf von " + event.caller
+                           : "Missed call from " + event.caller;
+  }
   return event_type_name(event.type);
 }
 }  // namespace
@@ -27,15 +58,38 @@ namespace {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
 void quit_application(GtkWidget*, gpointer) { gtk_main_quit(); }
 GtkWidget* history_menu = nullptr;
+AppIndicator* indicator = nullptr;
+std::deque<GtkWidget*> call_items;
+
+void set_indicator_icon(bool has_unread_call) {
+  app_indicator_set_icon_full(indicator,
+                              has_unread_call ? "fritzmonitor-phone-red" : "fritzmonitor-phone-green",
+                              german_locale()
+                                  ? (has_unread_call ? "Ungelesener eingehender Anruf" : "Keine ungelesenen Anrufe")
+                                  : (has_unread_call ? "Unread incoming call" : "No unread calls"));
+}
+
+void menu_shown(GtkWidget*, gpointer) { set_indicator_icon(false); }
+
+gboolean update_indicator_icon(gpointer data) {
+  set_indicator_icon(GPOINTER_TO_INT(data) != 0);
+  return G_SOURCE_REMOVE;
+}
 
 gboolean append_history_item(gpointer data) {
-  auto* label = static_cast<std::string*>(data);
+  auto* call = static_cast<CallSummary*>(data);
   if (history_menu) {
-    auto* item = gtk_menu_item_new_with_label(label->c_str());
-    gtk_menu_shell_insert(GTK_MENU_SHELL(history_menu), item, 1);
+    const auto label = format_call(*call);
+    auto* item = gtk_menu_item_new_with_label(label.c_str());
+    gtk_menu_shell_insert(GTK_MENU_SHELL(history_menu), item, 2);
     gtk_widget_show(item);
+    call_items.push_front(item);
+    if (call_items.size() > 3) {
+      gtk_widget_destroy(call_items.back());
+      call_items.pop_back();
+    }
   }
-  delete label;
+  delete call;
   return G_SOURCE_REMOVE;
 }
 #endif
@@ -48,20 +102,23 @@ Desktop::Desktop() {
   char** argv = nullptr;
   gtk_init(&argc, &argv);
   notify_init("FritzMonitor");
-  auto* indicator = app_indicator_new("fritzmonitor", "phone", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+  indicator = app_indicator_new("fritzmonitor", "fritzmonitor-phone-green", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
   auto* menu = gtk_menu_new();
   history_menu = menu;
-  auto* status = gtk_menu_item_new_with_label("Verbunden mit FRITZ!Box");
+  g_signal_connect(menu, "show", G_CALLBACK(menu_shown), nullptr);
+  const auto status_label = german_locale() ? "Verbunden mit FRITZ!Box" : "Connected to FRITZ!Box";
+  auto* status = gtk_menu_item_new_with_label(status_label);
   gtk_widget_set_sensitive(status, FALSE);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), status);
   auto* separator = gtk_separator_menu_item_new();
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), separator);
-  auto* quit = gtk_menu_item_new_with_label("Beenden");
+  auto* quit = gtk_menu_item_new_with_label(german_locale() ? "Beenden" : "Quit");
   g_signal_connect(quit, "activate", G_CALLBACK(quit_application), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit);
   gtk_widget_show_all(menu);
   app_indicator_set_menu(indicator, GTK_MENU(menu));
+  set_indicator_icon(false);
 #endif
 }
 
@@ -82,12 +139,17 @@ void Desktop::notify(const CallEvent& event) {
 #endif
 }
 
-void Desktop::add_event(const CallEvent& event) {
+void Desktop::mark_incoming_call() {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
-  auto* label = new std::string(event_type_name(event.type) + " " + event.caller);
-  g_idle_add(append_history_item, label);
+  g_idle_add(update_indicator_icon, GINT_TO_POINTER(1));
+#endif
+}
+
+void Desktop::record_call(const CallSummary& call) {
+#ifdef FRITZMONITOR_HAVE_DESKTOP
+  g_idle_add(append_history_item, new CallSummary(call));
 #else
-  (void)event;
+  (void)call;
 #endif
 }
 
