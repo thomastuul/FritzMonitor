@@ -34,19 +34,24 @@ sudo apt install "./build/package-deb/fritzmonitor-$(cat VERSION)-Linux.deb"
 
 1. Auf einem an der FRITZ!Box angemeldeten Telefon `#96*5*` wählen, um den
    Callmonitor zu aktivieren.
-2. Für die optionale Telefonbuchauflösung einen FRITZ!Box-Benutzer mit Zugriff
-   auf Sprachnachrichten, Faxnachrichten, FRITZ!App Fon und Anrufliste anlegen.
+2. Für die optionale Telefonbuchauflösung vorzugsweise einen FRITZ!Box-Benutzer
+   mit Zugriff auf Sprachnachrichten, Faxnachrichten, FRITZ!App Fon und
+   Anrufliste anlegen. Bei Setups mit reiner Kennwortanmeldung kann der
+   Benutzername leer bleiben.
 3. Den Zugriff für Anwendungen über TR-064 in den Heimnetzfreigaben der
    FRITZ!Box aktivieren. Die genaue Bezeichnung hängt von der FRITZ!OS-Version
    ab.
 
 TR-064 ist die lokale FRITZ!Box-Schnittstelle, über die FritzMonitor bei
 aktivierter Telefonbuchauflösung das Telefonbuch abfragt. Mit
-**TR-064-Passwort** ist das Kennwort des FRITZ!Box-Benutzers gemeint, dessen
-Name später unter `tr064_username` eingetragen wird. Es handelt sich nicht um
-den WLAN-Schlüssel und nicht um ein separates FritzMonitor-Passwort. Der reine
-Callmonitor auf Port `1012` benötigt keine Anmeldung; Benutzername und Kennwort
-werden nur gebraucht, wenn `addressbook_enabled = true` gesetzt ist.
+**TR-064-Passwort** ist normalerweise das Kennwort des FRITZ!Box-Benutzers
+gemeint, dessen Name später unter `tr064_username` eingetragen wird. Bei einer
+FRITZ!Box-Anmeldung nur mit dem allgemeinen FRITZ!Box-Kennwort bleibt
+`tr064_username` leer; als TR-064-Passwort wird dann dieses allgemeine Kennwort
+verwendet. Es handelt sich nicht um den WLAN-Schlüssel und nicht um ein
+separates FritzMonitor-Passwort. Der reine Callmonitor auf Port `1012` benötigt
+keine Anmeldung; die TR-064-Zugangsdaten werden nur gebraucht, wenn
+`addressbook_enabled = true` gesetzt ist.
 
 ## 4. Konfiguration anlegen
 
@@ -70,12 +75,22 @@ tr064_port = 49000
 tr064_username = "fritzmonitor"
 ```
 
+Bei einer FRITZ!Box-Anmeldung ohne Benutzernamen wird stattdessen Folgendes
+eingetragen:
+
+```toml
+tr064_username = ""
+```
+
+Das allgemeine FRITZ!Box-Kennwort wird anschließend ebenfalls über Schritt 5
+gespeichert.
+
 Das Kennwort wird anschließend wie in Schritt 5 beschrieben im Login-Keyring
 gespeichert. Falls kein Secret Service beziehungsweise GNOME-Keyring verwendet
 werden kann, unterstützt FritzMonitor als Rückfall weiterhin diesen Eintrag:
 
 ```toml
-tr064_password = "KENNWORT_DES_FRITZBOX_BENUTZERS"
+tr064_password = "TR064_KENNWORT"
 ```
 
 Diese Variante speichert das Kennwort im Klartext in
@@ -101,7 +116,9 @@ fritzmonitor --store-tr064-password
 
 Danach Seahorse öffnen, den Bereich **Passwörter** beziehungsweise den
 **Login**-Schlüsselbund wählen und nach `FritzMonitor TR-064` suchen. Der
-Eintrag heißt beispielsweise `FritzMonitor TR-064 (fritz.box)`.
+Eintrag heißt beispielsweise `FritzMonitor TR-064 (fritz.box)`. FritzMonitor
+ordnet ihn dem konfigurierten Host und Benutzernamen zu; ein leerer Benutzername
+wird dabei ebenfalls unterstützt.
 
 Enthält eine ältere Konfiguration noch `tr064_password`, wird sie stattdessen
 einmalig migriert:
