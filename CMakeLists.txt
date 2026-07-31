@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
+include(GNUInstallDirs)
 find_package(PkgConfig QUIET)
 
 set(FRITZMONITOR_DESKTOP_LIBS OFF)
@@ -56,3 +57,8 @@ endif()
 
 install(TARGETS fritzmonitor RUNTIME DESTINATION bin)
 install(FILES systemd/fritzmonitor.service DESTINATION share/systemd/user)
+install(FILES
+  assets/fritzmonitor-phone-green.svg
+  assets/fritzmonitor-phone-red.svg
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)

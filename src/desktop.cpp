@@ -27,6 +27,20 @@ namespace {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
 void quit_application(GtkWidget*, gpointer) { gtk_main_quit(); }
 GtkWidget* history_menu = nullptr;
+AppIndicator* indicator = nullptr;
+
+void set_indicator_icon(bool has_unread_call) {
+  app_indicator_set_icon_full(indicator,
+                              has_unread_call ? "fritzmonitor-phone-red" : "fritzmonitor-phone-green",
+                              has_unread_call ? "Ungelesener eingehender Anruf" : "Keine ungelesenen Anrufe");
+}
+
+void menu_shown(GtkWidget*, gpointer) { set_indicator_icon(false); }
+
+gboolean update_indicator_icon(gpointer data) {
+  set_indicator_icon(GPOINTER_TO_INT(data) != 0);
+  return G_SOURCE_REMOVE;
+}
 
 gboolean append_history_item(gpointer data) {
   auto* label = static_cast<std::string*>(data);
@@ -48,10 +62,11 @@ Desktop::Desktop() {
   char** argv = nullptr;
   gtk_init(&argc, &argv);
   notify_init("FritzMonitor");
-  auto* indicator = app_indicator_new("fritzmonitor", "phone", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+  indicator = app_indicator_new("fritzmonitor", "fritzmonitor-phone-green", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
   auto* menu = gtk_menu_new();
   history_menu = menu;
+  g_signal_connect(menu, "show", G_CALLBACK(menu_shown), nullptr);
   auto* status = gtk_menu_item_new_with_label("Verbunden mit FRITZ!Box");
   gtk_widget_set_sensitive(status, FALSE);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), status);
@@ -62,6 +77,7 @@ Desktop::Desktop() {
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit);
   gtk_widget_show_all(menu);
   app_indicator_set_menu(indicator, GTK_MENU(menu));
+  set_indicator_icon(false);
 #endif
 }
 
@@ -84,6 +100,7 @@ void Desktop::notify(const CallEvent& event) {
 
 void Desktop::add_event(const CallEvent& event) {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
+  if (event.type == EventType::Ring) g_idle_add(update_indicator_icon, GINT_TO_POINTER(1));
   auto* label = new std::string(event_type_name(event.type) + " " + event.caller);
   g_idle_add(append_history_item, label);
 #else

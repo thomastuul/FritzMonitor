@@ -19,6 +19,8 @@ trap 'DOCKER_CONFIG="$docker_config" docker rm "$container_id" >/dev/null; rm -r
 
 DOCKER_CONFIG="$docker_config" docker cp "$container_id:/fritzmonitor" "$artifact_dir/fritzmonitor"
 DOCKER_CONFIG="$docker_config" docker cp "$container_id:/fritzmonitor.service" "$artifact_dir/fritzmonitor.service"
+DOCKER_CONFIG="$docker_config" docker cp "$container_id:/fritzmonitor-phone-green.svg" "$artifact_dir/fritzmonitor-phone-green.svg"
+DOCKER_CONFIG="$docker_config" docker cp "$container_id:/fritzmonitor-phone-red.svg" "$artifact_dir/fritzmonitor-phone-red.svg"
 chmod 0755 "$artifact_dir/fritzmonitor"
 
 printf 'Artifacts written to %s\n' "$artifact_dir"
