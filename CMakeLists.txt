@@ -27,10 +27,20 @@ add_library(fritzmonitor_core
   src/callmonitor_parser.cpp
   src/config.cpp
   src/callmonitor_client.cpp
+  src/phonebook.cpp
 )
 target_include_directories(fritzmonitor_core PUBLIC include)
 target_compile_features(fritzmonitor_core PUBLIC cxx_std_20)
 target_compile_options(fritzmonitor_core PRIVATE -Wall -Wextra -Wpedantic)
+
+find_package(CURL QUIET)
+find_package(LibXml2 QUIET)
+if(CURL_FOUND AND LIBXML2_FOUND)
+  target_compile_definitions(fritzmonitor_core PRIVATE FRITZMONITOR_HAVE_PHONEBOOK=1)
+  target_link_libraries(fritzmonitor_core PRIVATE CURL::libcurl LibXml2::LibXml2)
+else()
+  message(STATUS "Phonebook libraries not found; TR-064 address book support disabled")
+endif()
 
 add_executable(fritzmonitor src/main.cpp src/desktop.cpp)
 target_link_libraries(fritzmonitor PRIVATE fritzmonitor_core)

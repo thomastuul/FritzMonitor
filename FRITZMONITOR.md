@@ -38,6 +38,29 @@ verworfen werden. Es werden immer nur die letzten drei Anrufe angezeigt, der
 neueste Eintrag steht oben. Bei deutscher Systemlokalisierung sind Menütexte
 und Statusangaben deutsch, ansonsten englisch.
 
+## Namensauflösung über das FRITZ!Box-Adressbuch
+
+Die Namensauflösung über das FRITZ!Box-Adressbuch ist eine optionale
+Erweiterung. FritzMonitor verwendet dafür die lokale TR-064/UPnP-Schnittstelle
+der FRITZ!Box, insbesondere den Telefonbuchdienst `X_AVM-DE_OnTel`.
+
+- Alle über TR-064 verfügbaren Telefonbücher werden beim Programmstart geladen
+  und gemeinsam im Speicher gehalten.
+- Rufnummern werden vor dem Vergleich normalisiert, damit unterschiedliche
+  Schreibweisen wie `+49...` und `0...` zugeordnet werden können.
+- Für einen Treffer wird der Name zusätzlich zur Rufnummer im Pulldown-Menü
+  angezeigt.
+- Ist die FRITZ!Box nicht erreichbar, TR-064 deaktiviert oder die Abfrage nicht
+  berechtigt, bleibt FritzMonitor funktionsfähig und zeigt die Rufnummer an.
+- Zugangsdaten werden ausschließlich über die lokale Konfiguration oder eine
+  dafür vorgesehene Umgebungsvariable bezogen und nicht in der Ereignisliste
+  oder im Repository gespeichert.
+
+Die Abfrage darf den Callmonitor und die Anzeige eingehender Anrufe nicht
+blockieren. Änderungen am Telefonbuch können später durch eine erneute Abfrage
+übernommen werden; eine dauerhafte Speicherung von Rufnummern oder Namen ist
+nicht erforderlich.
+
 ## Technologie
 
 - C++20
@@ -51,7 +74,12 @@ Die Desktop-Bibliotheken werden beim Build optional erkannt. Dadurch bleiben Par
 
 ## Konfiguration
 
-Die lokale TOML-Datei wird standardmäßig aus `~/.config/fritzmonitor/config.toml` gelesen. Zugangsdaten werden für den Callmonitor nicht benötigt. Rufnummern werden nicht dauerhaft gespeichert; die Ereignisliste bleibt nur bis zum Programmende im Speicher.
+Die lokale TOML-Datei wird standardmäßig aus `~/.config/fritzmonitor/config.toml`
+gelesen. Zugangsdaten werden für den Callmonitor nicht benötigt. Für die
+optionale TR-064-Telefonbuchabfrage können dort separate Zugangsdaten hinterlegt
+werden. Rufnummern werden nicht dauerhaft gespeichert; die Ereignisliste und
+die geladene Telefonbuch-Zuordnung bleiben nur bis zum Programmende im
+Speicher.
 
 Beispiel:
 
@@ -62,6 +90,23 @@ reconnect_seconds = 5
 max_events = 20
 notify_incoming = true
 notify_missed = true
+# Optional: TR-064 phonebook lookup
+addressbook_enabled = true
+tr064_port = 49000
+tr064_username = "fritzmonitor"
+tr064_password = "use-a-local-secret"
+```
+
+Alternativ können `FRITZMONITOR_TR064_USERNAME` und
+`FRITZMONITOR_TR064_PASSWORD` als Umgebungsvariablen verwendet werden. Die
+Passwortdatei sollte nur für den Benutzer lesbar sein.
+
+Bei FRITZ!Box-Versionen, die beim Web-Login keinen Benutzernamen verwenden,
+bleibt `tr064_username` leer; das Kennwort wird trotzdem an TR-064 übertragen:
+
+```toml
+tr064_username = ""
+tr064_password = "DEIN_FRITZBOX_PASSWORT"
 ```
 
 ## Entwicklung
