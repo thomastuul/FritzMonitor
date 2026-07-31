@@ -16,7 +16,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
 include(GNUInstallDirs)
-find_package(PkgConfig QUIET)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
 
 set(FRITZMONITOR_DESKTOP_LIBS OFF)
 if(PkgConfig_FOUND)
@@ -37,10 +38,12 @@ add_library(fritzmonitor_core
   src/config.cpp
   src/callmonitor_client.cpp
   src/phonebook.cpp
+  src/secret_store.cpp
 )
 target_include_directories(fritzmonitor_core PUBLIC include)
 target_compile_features(fritzmonitor_core PUBLIC cxx_std_20)
 target_compile_options(fritzmonitor_core PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(fritzmonitor_core PRIVATE PkgConfig::LIBSECRET)
 
 find_package(CURL QUIET)
 find_package(LibXml2 QUIET)
@@ -67,13 +70,18 @@ endif()
 if(BUILD_TESTING)
   add_executable(callmonitor_parser_test tests/callmonitor_parser_test.cpp)
   target_link_libraries(callmonitor_parser_test PRIVATE fritzmonitor_core)
-  target_compile_options(callmonitor_parser_test PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(callmonitor_parser_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
   add_test(NAME callmonitor_parser_test COMMAND callmonitor_parser_test)
 
   add_executable(config_test tests/config_test.cpp)
   target_link_libraries(config_test PRIVATE fritzmonitor_core)
-  target_compile_options(config_test PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(config_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
   add_test(NAME config_test COMMAND config_test)
+
+  add_executable(secret_store_test tests/secret_store_test.cpp)
+  target_link_libraries(secret_store_test PRIVATE fritzmonitor_core)
+  target_compile_options(secret_store_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
+  add_test(NAME secret_store_test COMMAND secret_store_test)
 endif()
 
 install(TARGETS fritzmonitor RUNTIME DESTINATION bin)
@@ -89,7 +97,14 @@ install(FILES
   assets/fritzmonitor-phone-red.svg
   DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
 )
-install(FILES LICENSE COPYRIGHT.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES
+  LICENSE
+  COPYRIGHT.md
+  README.md
+  FRITZMONITOR.md
+  QUICK-SETUP.md
+  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+)
 
 set(CPACK_PACKAGE_NAME "fritzmonitor")
 set(CPACK_PACKAGE_VENDOR "Thomas Tuul")
@@ -104,14 +119,14 @@ set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_RELEASE "1")
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-only")
 set(CPACK_RPM_PACKAGE_REQUIRES
-    "glib2, gtk3, libnotify, libayatana-appindicator-gtk3, libcurl, libxml2")
+    "glib2, gtk3, libnotify, libayatana-appindicator-gtk3, libcurl, libsecret, libxml2")
 set(CPACK_GENERATOR "DEB;RPM")
 include(CPack)
 
 set(FRITZMONITOR_PACKAGE_DEPENDENCIES fritzmonitor)
 if(BUILD_TESTING)
   list(APPEND FRITZMONITOR_PACKAGE_DEPENDENCIES
-       callmonitor_parser_test config_test)
+       callmonitor_parser_test config_test secret_store_test)
 endif()
 
 add_custom_target(package-deb

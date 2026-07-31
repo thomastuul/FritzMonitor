@@ -14,6 +14,7 @@ RUN apt-get update \
        libnotify-dev \
        libayatana-appindicator3-dev \
        libcurl4-openssl-dev \
+       libsecret-1-dev \
        libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -22,7 +23,8 @@ COPY . .
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
        -DFRITZMONITOR_SERVICE_EXECUTABLE=%h/.local/bin/fritzmonitor \
     && cmake --build build --parallel \
-    && ctest --test-dir build --output-on-failure
+    && ctest --test-dir build --output-on-failure \
+    && test "$(./build/fritzmonitor --version)" = "FritzMonitor $(cat VERSION)"
 
 FROM scratch AS artifact
 

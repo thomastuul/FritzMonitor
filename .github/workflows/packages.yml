@@ -10,6 +10,17 @@ permissions:
   contents: write
 
 jobs:
+  markdown:
+    name: Markdown
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Check Markdown in container
+        run: ./scripts/markdown-in-container.sh check
+
   package:
     name: ${{ matrix.format }} package
     runs-on: ubuntu-latest
