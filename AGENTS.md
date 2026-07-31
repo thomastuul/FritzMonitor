@@ -8,9 +8,15 @@
 - Das erzeugte Binary läuft anschließend nativ auf dem Host. Auf dem Host dürfen
   dafür ausschließlich die benötigten Runtime-Bibliotheken installiert werden;
   eine Ausführung des Programms in einem Container ist nicht der Standardweg.
+- Die Secret-Service-Anbindung verwendet `libsecret`. Das Entwicklungspaket
+  gehört ausschließlich in den Builder-Container; auf dem Host wird nur die
+  passende `libsecret`-Runtime-Bibliothek benötigt.
 - Der Container-Build muss neben dem Release-Binary auch die vorhandenen Tests
   ausführen. Vor einer Installation sind Build, Tests und die tatsächliche
   Binary-Ausgabe zu verifizieren.
+- Markdown wird ausschließlich mit `scripts/markdown-in-container.sh` geprüft
+  oder formatiert. Node.js, npm, Prettier und markdownlint werden nicht auf dem
+  Host vorausgesetzt oder installiert.
 - Änderungen an Container-Build, Runtime-Abhängigkeiten oder Installationspfad
   sind in dieser Datei und in der Projektdokumentation konsistent zu halten.
 

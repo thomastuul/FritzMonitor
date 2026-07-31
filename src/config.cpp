@@ -1,9 +1,16 @@
 #include "config.hpp"
 
+#include <cerrno>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string_view>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vector>
 
 namespace fritzmonitor {
 namespace {
@@ -57,7 +64,10 @@ Config load_config(const std::filesystem::path& path) {
       else if (key == "addressbook_enabled") config.addressbook_enabled = boolean_value(value);
       else if (key == "tr064_port") config.tr064_port = std::stoi(value_of(value));
       else if (key == "tr064_username") config.tr064_username = value_of(value);
-      else if (key == "tr064_password") config.tr064_password = value_of(value);
+      else if (key == "tr064_password") {
+        config.tr064_password = value_of(value);
+        config.tr064_password_from_config = !config.tr064_password.empty();
+      }
     } catch (const std::exception&) {
       throw std::runtime_error("invalid value for config key: " + key);
     }
@@ -71,6 +81,77 @@ Config load_config(const std::filesystem::path& path) {
   if (const char* password = std::getenv("FRITZMONITOR_TR064_PASSWORD"); password && config.tr064_password.empty())
     config.tr064_password = password;
   return config;
+}
+
+void remove_tr064_password_from_config(const std::filesystem::path& path) {
+  struct stat metadata {};
+  if (::lstat(path.c_str(), &metadata) != 0)
+    throw std::runtime_error("cannot inspect configuration: " + std::string(std::strerror(errno)));
+  if (!S_ISREG(metadata.st_mode))
+    throw std::runtime_error("configuration must be a regular file for credential migration");
+
+  std::ifstream input(path, std::ios::binary);
+  if (!input) throw std::runtime_error("cannot open configuration for credential migration");
+  const std::string contents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+  if (input.bad()) throw std::runtime_error("cannot read configuration for credential migration");
+
+  std::string sanitized;
+  bool removed = false;
+  std::size_t position = 0;
+  while (position < contents.size()) {
+    const auto newline = contents.find('\n', position);
+    const auto next = newline == std::string::npos ? contents.size() : newline + 1;
+    auto line = contents.substr(position, next - position);
+    auto inspected = trim(line);
+    const auto equals = inspected.find('=');
+    if (equals != std::string::npos && trim(inspected.substr(0, equals)) == "tr064_password") {
+      removed = true;
+    } else {
+      sanitized.append(line);
+    }
+    position = next;
+  }
+  if (!removed) throw std::runtime_error("configuration does not contain tr064_password");
+
+  auto pattern = (path.parent_path() / (path.filename().string() + ".tmp.XXXXXX")).string();
+  std::vector<char> temporary_path(pattern.begin(), pattern.end());
+  temporary_path.push_back('\0');
+  const int descriptor = ::mkstemp(temporary_path.data());
+  if (descriptor < 0)
+    throw std::runtime_error("cannot create temporary configuration: " + std::string(std::strerror(errno)));
+
+  const std::filesystem::path temporary(temporary_path.data());
+  auto fail = [&](const std::string& message) {
+    const int saved_errno = errno;
+    ::close(descriptor);
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    throw std::runtime_error(message + ": " + std::string(std::strerror(saved_errno)));
+  };
+  if (::fchmod(descriptor, metadata.st_mode & 0777) != 0) fail("cannot set configuration permissions");
+
+  std::size_t written = 0;
+  while (written < sanitized.size()) {
+    const auto result = ::write(descriptor, sanitized.data() + written, sanitized.size() - written);
+    if (result < 0) {
+      if (errno == EINTR) continue;
+      fail("cannot write migrated configuration");
+    }
+    written += static_cast<std::size_t>(result);
+  }
+  if (::fsync(descriptor) != 0) fail("cannot synchronize migrated configuration");
+  if (::close(descriptor) != 0) {
+    const int saved_errno = errno;
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    throw std::runtime_error("cannot close migrated configuration: " + std::string(std::strerror(saved_errno)));
+  }
+  if (::rename(temporary.c_str(), path.c_str()) != 0) {
+    const int saved_errno = errno;
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    throw std::runtime_error("cannot replace configuration: " + std::string(std::strerror(saved_errno)));
+  }
 }
 
 }  // namespace fritzmonitor

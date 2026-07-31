@@ -5,12 +5,12 @@ format=${1:-}
 case "$format" in
   deb)
     image=debian:trixie
-    packages='build-essential cmake pkg-config file libglib2.0-dev libgtk-3-dev libnotify-dev libayatana-appindicator3-dev libcurl4-openssl-dev libxml2-dev dpkg-dev'
+    packages='build-essential cmake pkg-config file libglib2.0-dev libgtk-3-dev libnotify-dev libayatana-appindicator3-dev libcurl4-openssl-dev libsecret-1-dev libxml2-dev dpkg-dev'
     target=package-deb
     ;;
   rpm)
     image=fedora:latest
-    packages='gcc-c++ cmake pkgconf-pkg-config glib2-devel gtk3-devel libnotify-devel libayatana-appindicator-gtk3-devel libcurl-devel libxml2-devel rpm-build'
+    packages='gcc-c++ cmake pkgconf-pkg-config glib2-devel gtk3-devel libnotify-devel libayatana-appindicator-gtk3-devel libcurl-devel libsecret-devel libxml2-devel rpm-build'
     target=package-rpm
     ;;
   *)
@@ -39,6 +39,9 @@ docker run --rm \
       -DBUILD_TESTING=ON \\
       -DCMAKE_INSTALL_PREFIX=/usr \\
       -DFRITZMONITOR_SERVICE_EXECUTABLE=/usr/bin/fritzmonitor
+    cmake --build build/package-$format --parallel
+    ctest --test-dir build/package-$format --output-on-failure
+    test \"\$(build/package-$format/fritzmonitor --version)\" = \"FritzMonitor \$(cat VERSION)\"
     cmake --build build/package-$format --target $target --parallel
   "
 

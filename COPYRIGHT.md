@@ -1,7 +1,7 @@
 # Copyright
 
-FritzMonitor wurde erstellt und gestaltet von **Thomas Tuul zusammen mit
-OpenAI Codex**.
+FritzMonitor wurde erstellt und gestaltet von **Thomas Tuul zusammen mit OpenAI
+Codex**.
 
 Copyright (C) 2026 Thomas Tuul zusammen mit OpenAI Codex.
 
