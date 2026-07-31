@@ -2,9 +2,10 @@
 
 ## Version und Copyright
 
-FritzMonitor verwendet das Schema `MAJOR.MINOR.PATCH` (SemVer). Der aktuelle
-Stand ist `0.2.0`; Debian- und RPM-Pakete verwenden zusätzlich ein Paket-
-Release, derzeit `1`. Das Projekt wurde erstellt und gestaltet von Thomas
+FritzMonitor verwendet das Schema `MAJOR.MINOR.PATCH` (SemVer). Die alleinige
+Versionsquelle ist die Datei `VERSION` im Projektroot; CMake übernimmt diesen
+Wert für Binary und Pakete. Debian- und RPM-Pakete verwenden zusätzlich ein
+Paket-Release, derzeit `1`. Das Projekt wurde erstellt und gestaltet von Thomas
 Tuul zusammen mit OpenAI Codex. Die vollständige Attribution steht in
 `COPYRIGHT.md`.
 
@@ -200,7 +201,15 @@ Der GitHub-Workflow `.github/workflows/packages.yml` baut beide Pakettypen bei
 jedem Push auf `master` sowie bei manueller Auslösung. Die erzeugten Pakete
 werden als Artefakte des jeweiligen Actions-Laufs bereitgestellt; ein Push auf
 einen normalen Entwicklerbranch oder ein offener PR löst diesen Workflow nicht
-automatisch aus.
+automatisch aus. Wird ein Tag im Format `v<SemVer>` gepusht, baut der Workflow
+die Pakete zusätzlich und erstellt daraus automatisch einen GitHub-Release mit
+beiden Paketdateien als Release-Assets. Vor dem Veröffentlichen wird geprüft,
+dass die Paketversion zum Tag passt:
+
+```sh
+git tag -a v0.2.0 -m "FritzMonitor 0.2.0"
+git push origin v0.2.0
+```
 
 Für die vollständige Desktop-Integration werden auf Debian/Ubuntu die oben
 genannten Runtime-Bibliotheken benötigt.

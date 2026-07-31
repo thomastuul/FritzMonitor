@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(fritzmonitor VERSION 0.2.0 LANGUAGES CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FRITZMONITOR_VERSION
+     LIMIT_COUNT 1)
+string(STRIP "${FRITZMONITOR_VERSION}" FRITZMONITOR_VERSION)
+if(NOT FRITZMONITOR_VERSION MATCHES "^[0-9]+[.][0-9]+[.][0-9]+$")
+  message(FATAL_ERROR "VERSION must contain a SemVer MAJOR.MINOR.PATCH value")
+endif()
+project(fritzmonitor VERSION ${FRITZMONITOR_VERSION} LANGUAGES CXX)
 
 set(FRITZMONITOR_SERVICE_EXECUTABLE "%h/.local/bin/fritzmonitor"
     CACHE STRING "Executable path used by the user service")
