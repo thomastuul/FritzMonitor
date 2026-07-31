@@ -3,7 +3,7 @@ Description=FRITZ!Box desktop event monitor
 After=graphical-session.target network-online.target
 
 [Service]
-ExecStart=%h/.local/bin/fritzmonitor
+ExecStart=@FRITZMONITOR_SERVICE_EXECUTABLE@
 Restart=on-failure
 RestartSec=5
 Environment=DISPLAY=:0

@@ -1,5 +1,13 @@
 # FritzMonitor
 
+## Version und Copyright
+
+FritzMonitor verwendet das Schema `MAJOR.MINOR.PATCH` (SemVer). Der aktuelle
+Stand ist `0.2.0`; Debian- und RPM-Pakete verwenden zusätzlich ein Paket-
+Release, derzeit `1`. Das Projekt wurde erstellt und gestaltet von Thomas
+Tuul zusammen mit OpenAI Codex. Die vollständige Attribution steht in
+`COPYRIGHT.md`.
+
 FritzMonitor soll als native Linux-Systemtray-Anwendung Ereignisse einer FRITZ!Box empfangen und den Benutzer per Desktop-Benachrichtigung informieren.
 
 ## MVP
@@ -147,6 +155,26 @@ Runtime-Bibliotheken:
 Die Artefakte werden unter `build/container-release/` abgelegt. Für die
 native Desktop-Integration benötigt der Host die Runtime-Pakete für GLib/GIO,
 GTK 3, libnotify und Ayatana AppIndicator, aber keine `*-dev`-Pakete.
+
+### Debian- und Fedora-Pakete
+
+CPack stellt zwei explizite CMake-Ziele bereit. Für Pakete wird der systemd-
+User-Service auf den systemweiten Installationspfad `/usr/bin/fritzmonitor`
+ausgerichtet:
+
+```sh
+cmake -S . -B build/packages -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr \
+  -DFRITZMONITOR_SERVICE_EXECUTABLE=/usr/bin/fritzmonitor
+cmake --build build/packages --target package-deb
+cmake --build build/packages --target package-rpm
+```
+
+Beide Ziele bauen das Release-Binary, führen die Tests aus und erzeugen
+anschließend das jeweilige Paket. Entwicklungsabhängigkeiten werden dabei
+nicht auf dem Produktivsystem benötigt. Für manuell angestoßene Container-
+Builds stehen `scripts/package-in-container.sh deb` und `scripts/package-in-
+container.sh rpm` bereit. Der GitHub-Workflow verwendet dieselben Wrapper.
 
 Für die vollständige Desktop-Integration werden auf Debian/Ubuntu die oben
 genannten Runtime-Bibliotheken benötigt.

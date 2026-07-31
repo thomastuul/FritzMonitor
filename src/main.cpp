@@ -18,8 +18,12 @@ int main(int argc, char** argv) {
       const std::string argument = argv[i];
       if (argument == "--simulate") simulate = true;
       else if (argument == "--config" && i + 1 < argc) config_path = argv[++i];
+      else if (argument == "--version") {
+        std::cout << "FritzMonitor " << FRITZMONITOR_VERSION << '\n';
+        return 0;
+      }
       else if (argument == "--help") {
-        std::cout << "Usage: fritzmonitor [--config PATH] [--simulate]\n";
+        std::cout << "Usage: fritzmonitor [--config PATH] [--simulate] [--version]\n";
         return 0;
       }
     }
