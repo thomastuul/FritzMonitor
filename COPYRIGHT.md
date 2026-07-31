@@ -5,6 +5,5 @@ OpenAI Codex**.
 
 Copyright (C) 2026 Thomas Tuul zusammen mit OpenAI Codex.
 
-Die konkreten Nutzungs- und Weitergabebedingungen werden in einer separaten
-Lizenzdatei festgelegt, bevor das Projekt als öffentliche Distribution
-veröffentlicht wird.
+FritzMonitor wird unter der GNU General Public License Version 3 (GPLv3)
+veröffentlicht. Die vollständigen Bedingungen stehen in `LICENSE`.

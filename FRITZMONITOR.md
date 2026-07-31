@@ -8,6 +8,8 @@ Wert für Binary und Pakete. Debian- und RPM-Pakete verwenden zusätzlich ein
 Paket-Release, derzeit `1`. Das Projekt wurde erstellt und gestaltet von Thomas
 Tuul zusammen mit OpenAI Codex. Die vollständige Attribution steht in
 `COPYRIGHT.md`.
+FritzMonitor wird unter der GNU General Public License Version 3 (GPLv3)
+veröffentlicht; siehe `LICENSE`.
 
 FritzMonitor soll als native Linux-Systemtray-Anwendung Ereignisse einer FRITZ!Box empfangen und den Benutzer per Desktop-Benachrichtigung informieren.
 
