@@ -32,11 +32,8 @@ std::string format_call(const CallSummary& call) {
   std::tm time{};
   localtime_r(&local_time, &time);
   std::ostringstream output;
-  output << call.caller;
-  if (!call.name.empty()) output << " (" << call.name << ")";
-  output << " - " << std::put_time(&time, "%H:%M") << " - ";
-  output << (german_locale() ? (call.answered ? "Angenommen" : "Verpasst")
-                             : (call.answered ? "Answered" : "Missed"));
+  output << std::put_time(&time, "%d.%m. %H:%M") << " - ";
+  output << (call.name.empty() ? call.caller : call.name);
   return output.str();
 }
 
@@ -82,9 +79,20 @@ gboolean append_history_item(gpointer data) {
   auto* call = static_cast<CallSummary*>(data);
   if (history_menu) {
     const auto label = format_call(*call);
-    auto* item = gtk_menu_item_new_with_label(label.c_str());
+    auto* item = gtk_menu_item_new();
+    auto* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    auto* icon = gtk_image_new_from_icon_name(
+        call->answered ? "fritzmonitor-phone-green" : "fritzmonitor-phone-red", GTK_ICON_SIZE_MENU);
+    auto* text = gtk_label_new(label.c_str());
+    gtk_label_set_xalign(GTK_LABEL(text), 0.0F);
+    gtk_box_pack_start(GTK_BOX(row), icon, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(row), text, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(item), row);
+    gtk_widget_set_tooltip_text(
+        item, german_locale() ? (call->answered ? "Angenommener Anruf" : "Verpasster Anruf")
+                               : (call->answered ? "Answered call" : "Missed call"));
     gtk_menu_shell_insert(GTK_MENU_SHELL(history_menu), item, 2);
-    gtk_widget_show(item);
+    gtk_widget_show_all(item);
     call_items.push_front(item);
     if (call_items.size() > 3) {
       gtk_widget_destroy(call_items.back());

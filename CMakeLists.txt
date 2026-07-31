@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
-project(fritzmonitor VERSION 0.1.0 LANGUAGES CXX)
+project(fritzmonitor VERSION 0.2.0 LANGUAGES CXX)
+
+set(FRITZMONITOR_SERVICE_EXECUTABLE "%h/.local/bin/fritzmonitor"
+    CACHE STRING "Executable path used by the user service")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,6 +48,8 @@ endif()
 add_executable(fritzmonitor src/main.cpp src/desktop.cpp)
 target_link_libraries(fritzmonitor PRIVATE fritzmonitor_core)
 target_compile_options(fritzmonitor PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_definitions(fritzmonitor PRIVATE
+  FRITZMONITOR_VERSION="${PROJECT_VERSION}")
 
 if(FRITZMONITOR_DESKTOP_LIBS)
   target_compile_definitions(fritzmonitor PRIVATE FRITZMONITOR_HAVE_DESKTOP=1)
@@ -66,9 +71,55 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS fritzmonitor RUNTIME DESTINATION bin)
-install(FILES systemd/fritzmonitor.service DESTINATION share/systemd/user)
+configure_file(
+  systemd/fritzmonitor.service.in
+  ${CMAKE_CURRENT_BINARY_DIR}/fritzmonitor.service
+  @ONLY
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fritzmonitor.service
+        DESTINATION share/systemd/user)
 install(FILES
   assets/fritzmonitor-phone-green.svg
   assets/fritzmonitor-phone-red.svg
   DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)
+install(FILES COPYRIGHT.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+set(CPACK_PACKAGE_NAME "fritzmonitor")
+set(CPACK_PACKAGE_VENDOR "Thomas Tuul")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FRITZ!Box call monitor for the Linux system tray")
+set(CPACK_PACKAGE_DESCRIPTION
+    "Native Linux system-tray monitor for incoming FRITZ!Box calls.")
+set(CPACK_PACKAGE_CONTACT "Thomas Tuul")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_DEBIAN_PACKAGE_RELEASE "1")
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_RPM_PACKAGE_RELEASE "1")
+set(CPACK_RPM_PACKAGE_LICENSE "Proprietary")
+set(CPACK_RPM_PACKAGE_REQUIRES
+    "glib2, gtk3, libnotify, libayatana-appindicator-gtk3, libcurl, libxml2")
+set(CPACK_GENERATOR "DEB;RPM")
+include(CPack)
+
+set(FRITZMONITOR_PACKAGE_DEPENDENCIES fritzmonitor)
+if(BUILD_TESTING)
+  list(APPEND FRITZMONITOR_PACKAGE_DEPENDENCIES
+       callmonitor_parser_test config_test)
+endif()
+
+add_custom_target(package-deb
+  DEPENDS ${FRITZMONITOR_PACKAGE_DEPENDENCIES}
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  COMMAND ${CMAKE_CPACK_COMMAND} -G DEB --config ${CMAKE_BINARY_DIR}/CPackConfig.cmake
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMENT "Building Debian package"
+)
+
+add_custom_target(package-rpm
+  DEPENDS ${FRITZMONITOR_PACKAGE_DEPENDENCIES}
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  COMMAND ${CMAKE_CPACK_COMMAND} -G RPM --config ${CMAKE_BINARY_DIR}/CPackConfig.cmake
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMENT "Building Fedora/RPM package"
 )

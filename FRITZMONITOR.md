@@ -1,5 +1,13 @@
 # FritzMonitor
 
+## Version und Copyright
+
+FritzMonitor verwendet das Schema `MAJOR.MINOR.PATCH` (SemVer). Der aktuelle
+Stand ist `0.2.0`; Debian- und RPM-Pakete verwenden zusätzlich ein Paket-
+Release, derzeit `1`. Das Projekt wurde erstellt und gestaltet von Thomas
+Tuul zusammen mit OpenAI Codex. Die vollständige Attribution steht in
+`COPYRIGHT.md`.
+
 FritzMonitor soll als native Linux-Systemtray-Anwendung Ereignisse einer FRITZ!Box empfangen und den Benutzer per Desktop-Benachrichtigung informieren.
 
 ## MVP
@@ -43,14 +51,18 @@ Das Öffnen des Pulldown-Menüs bestätigt den aktuellen Anrufstatus und setzt
 das Icon wieder auf Grün. Die grünen und roten SVG-Icons werden zusammen mit
 der nativen Desktop-Binärdatei installiert.
 
-Das Pulldown-Menü zeigt pro Anruf genau eine Zeile mit Rufnummer, Uhrzeit und
-Status (`Angenommen` oder `Verpasst`). Ist ein Name verfügbar, wird er neben
-der Rufnummer angezeigt; andernfalls bleibt die Rufnummer die eindeutige
-Anzeige. Eine Namensauflösung kann optional über das FRITZ!Box-Adressbuch
-erfolgen; wenn keine Auflösung verfügbar ist, darf der Anruf trotzdem nicht
-verworfen werden. Es werden immer nur die letzten drei Anrufe angezeigt, der
-neueste Eintrag steht oben. Bei deutscher Systemlokalisierung sind Menütexte
-und Statusangaben deutsch, ansonsten englisch.
+Das Pulldown-Menü zeigt pro Anruf genau eine Zeile in dieser Reihenfolge:
+
+1. grüner Telefonhörer bei einem angenommenen Anruf oder roter Telefonhörer
+   bei einem verpassten Anruf
+2. Datum und Uhrzeit im Format `12.07. 18:23`
+3. Name oder, falls kein Name zugeordnet werden kann, die Rufnummer
+
+Eine Namensauflösung kann optional über das FRITZ!Box-Adressbuch erfolgen; wenn
+keine Auflösung verfügbar ist, darf der Anruf trotzdem nicht verworfen werden.
+Es werden immer nur die letzten drei Anrufe angezeigt, der neueste Eintrag
+steht oben. Bei deutscher Systemlokalisierung sind Menütexte und Tooltips
+deutsch, ansonsten englisch.
 
 ## Namensauflösung über das FRITZ!Box-Adressbuch
 
@@ -143,6 +155,26 @@ Runtime-Bibliotheken:
 Die Artefakte werden unter `build/container-release/` abgelegt. Für die
 native Desktop-Integration benötigt der Host die Runtime-Pakete für GLib/GIO,
 GTK 3, libnotify und Ayatana AppIndicator, aber keine `*-dev`-Pakete.
+
+### Debian- und Fedora-Pakete
+
+CPack stellt zwei explizite CMake-Ziele bereit. Für Pakete wird der systemd-
+User-Service auf den systemweiten Installationspfad `/usr/bin/fritzmonitor`
+ausgerichtet:
+
+```sh
+cmake -S . -B build/packages -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr \
+  -DFRITZMONITOR_SERVICE_EXECUTABLE=/usr/bin/fritzmonitor
+cmake --build build/packages --target package-deb
+cmake --build build/packages --target package-rpm
+```
+
+Beide Ziele bauen das Release-Binary, führen die Tests aus und erzeugen
+anschließend das jeweilige Paket. Entwicklungsabhängigkeiten werden dabei
+nicht auf dem Produktivsystem benötigt. Für manuell angestoßene Container-
+Builds stehen `scripts/package-in-container.sh deb` und `scripts/package-in-
+container.sh rpm` bereit. Der GitHub-Workflow verwendet dieselben Wrapper.
 
 Für die vollständige Desktop-Integration werden auf Debian/Ubuntu die oben
 genannten Runtime-Bibliotheken benötigt.
