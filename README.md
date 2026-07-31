@@ -1,5 +1,11 @@
 # FritzMonitor
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
+![CMake 3.20+](https://img.shields.io/badge/CMake-3.20%2B-blue.svg)
+![Platform: Linux](https://img.shields.io/badge/Platform-Linux-blue.svg)
+![Packages: DEB and RPM](https://img.shields.io/badge/Packages-DEB%20%7C%20RPM-blue.svg)
+
 FritzMonitor ist ein nativer Linux-Systemtray-Monitor für den
 FRITZ!Box-Callmonitor. Er verbindet sich über TCP mit Port `1012`, meldet
 eingehende Anrufe per Desktop-Benachrichtigung und zeigt den Anrufstatus im
