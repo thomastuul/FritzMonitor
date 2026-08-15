@@ -36,6 +36,7 @@ add_library(fritzmonitor_core
   src/call_event.cpp
   src/callmonitor_parser.cpp
   src/config.cpp
+  src/network_target.cpp
   src/callmonitor_client.cpp
   src/phonebook.cpp
   src/secret_store.cpp
@@ -82,6 +83,18 @@ if(BUILD_TESTING)
   target_link_libraries(secret_store_test PRIVATE fritzmonitor_core)
   target_compile_options(secret_store_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
   add_test(NAME secret_store_test COMMAND secret_store_test)
+
+  add_executable(network_security_test tests/network_security_test.cpp)
+  target_link_libraries(network_security_test PRIVATE fritzmonitor_core)
+  target_compile_options(network_security_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
+  add_test(NAME network_security_test COMMAND network_security_test)
+
+  if(CURL_FOUND AND LIBXML2_FOUND)
+    add_executable(phonebook_security_test tests/phonebook_security_test.cpp)
+    target_link_libraries(phonebook_security_test PRIVATE fritzmonitor_core CURL::libcurl)
+    target_compile_options(phonebook_security_test PRIVATE -Wall -Wextra -Wpedantic -UNDEBUG)
+    add_test(NAME phonebook_security_test COMMAND phonebook_security_test)
+  endif()
 endif()
 
 install(TARGETS fritzmonitor RUNTIME DESTINATION bin)
@@ -127,6 +140,10 @@ set(FRITZMONITOR_PACKAGE_DEPENDENCIES fritzmonitor)
 if(BUILD_TESTING)
   list(APPEND FRITZMONITOR_PACKAGE_DEPENDENCIES
        callmonitor_parser_test config_test secret_store_test)
+  list(APPEND FRITZMONITOR_PACKAGE_DEPENDENCIES network_security_test)
+  if(CURL_FOUND AND LIBXML2_FOUND)
+    list(APPEND FRITZMONITOR_PACKAGE_DEPENDENCIES phonebook_security_test)
+  endif()
 endif()
 
 add_custom_target(package-deb

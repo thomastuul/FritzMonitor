@@ -9,6 +9,8 @@ struct Config {
   std::string host = "fritz.box";
   int port = 1012;
   int reconnect_seconds = 5;
+  int reconnect_max_seconds = 60;
+  bool allow_nonlocal_addresses = false;
   int max_events = 20;
   bool notify_incoming = true;
   bool notify_missed = true;

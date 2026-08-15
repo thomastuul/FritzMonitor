@@ -176,11 +176,12 @@ int main(int argc, char** argv) {
       callback(*parse_callmonitor_line("DISCONNECT;1;0"));
       return 0;
     }
-    std::thread phonebook_thread([&phonebook] { phonebook.load(); });
+    std::thread phonebook_thread([&phonebook] { phonebook.run(); });
     CallmonitorClient client(config, callback);
 #ifdef FRITZMONITOR_HAVE_DESKTOP
     std::thread network_thread([&client] { client.run(); });
     desktop.run();
+    phonebook.stop();
     phonebook_thread.join();
     network_thread.detach();
     return 0;

@@ -77,7 +77,9 @@ Erweiterung. FritzMonitor verwendet dafür die lokale TR-064/UPnP-Schnittstelle
 der FRITZ!Box, insbesondere den Telefonbuchdienst `X_AVM-DE_OnTel`.
 
 - Alle über TR-064 verfügbaren Telefonbücher werden beim Programmstart geladen
-  und gemeinsam im Speicher gehalten.
+  und gemeinsam im Speicher gehalten. Scheitert das unterwegs, wird die Abfrage
+  mit begrenztem Backoff wiederholt und nach der Rückkehr ins Heimnetz ohne
+  Neustart nachgeholt.
 - Rufnummern werden vor dem Vergleich normalisiert, damit unterschiedliche
   Schreibweisen wie `+49...` und `0...` zugeordnet werden können.
 - Für einen Treffer wird der Name zusätzlich zur Rufnummer im Pulldown-Menü
@@ -87,6 +89,38 @@ der FRITZ!Box, insbesondere den Telefonbuchdienst `X_AVM-DE_OnTel`.
 - Das TR-064-Passwort wird bevorzugt über den Secret Service des Desktops
   bezogen und kann beispielsweise mit Seahorse verwaltet werden. Es wird nicht
   in der Ereignisliste oder im Repository gespeichert.
+
+## Netzwerk-Vertrauensgrenze
+
+Callmonitor und TR-064 verwenden dieselbe fail-closed Zielprüfung. In der
+Voreinstellung sind ausschließlich diese Adressklassen zulässig:
+
+- IPv4: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, Link-Local
+  `169.254.0.0/16` und Loopback `127.0.0.0/8`
+- IPv6: ULA `fc00::/7`, Link-Local `fe80::/10` und Loopback `::1`
+- IPv4-gemappte IPv6-Adressen nur dann, wenn die enthaltene IPv4-Adresse nach
+  denselben Regeln zulässig ist
+
+Multicast, unspecified, Carrier-Grade-NAT- und öffentlich routbare Adressen
+werden abgewiesen. Enthält eine DNS-Antwort sowohl erlaubte als auch unerlaubte
+Adressen, wird die gesamte Antwort verworfen. Dadurch kann keine von mehreren
+Adressen unbemerkt die Sicherheitsentscheidung umgehen.
+
+Der Callmonitor verbindet den POSIX-Socket direkt mit den bereits geprüften
+`sockaddr`-Werten. Für HTTP(S) trägt FritzMonitor denselben DNS-Snapshot mit
+`CURLOPT_RESOLVE` in den libcurl-Transfer ein. Damit gibt es zwischen Prüfung
+und Nutzung keine zweite DNS-Auflösung. Systemweite HTTP-Proxys, `.netrc`,
+Redirects und andere URL-Protokolle werden für diese Requests deaktiviert.
+
+TR-064-Zugangsdaten werden ausschließlich für die fest konstruierte
+`/upnp/control/x_contact`-URL gesetzt. Eine vom Endpunkt gelieferte
+Telefonbuch-URL muss ein explizites `http`- oder `https`-Schema und
+ausschließlich erlaubte Zieladressen besitzen. Sie wird ohne TR-064-Benutzername
+und -Passwort abgerufen. Diese Trennung verhindert, dass ein manipulierter
+SOAP-Inhalt die Zugangsdaten an einen weiteren Host weiterreicht. Das lokale
+HTTP-Protokoll selbst bietet allerdings keine kryptografische
+Serverauthentisierung; ein Angreifer im zugelassenen lokalen Netz bleibt deshalb
+ein Restrisiko.
 
 Die Abfrage darf den Callmonitor und die Anzeige eingehender Anrufe nicht
 blockieren. Änderungen am Telefonbuch können später durch eine erneute Abfrage
@@ -122,6 +156,8 @@ Beispiel:
 host = "fritz.box"
 port = 1012
 reconnect_seconds = 5
+reconnect_max_seconds = 60
+allow_nonlocal_addresses = false
 max_events = 20
 notify_incoming = true
 notify_missed = true
@@ -130,6 +166,21 @@ addressbook_enabled = true
 tr064_port = 49000
 tr064_username = "fritzmonitor"
 ```
+
+`reconnect_seconds` bestimmt die erste Pause nach einem Fehlschlag. Das
+Intervall verdoppelt sich bis `reconnect_max_seconds` und wird nach
+erfolgreicher Verbindung zurückgesetzt. Eine zusammenhängende Ausfallphase
+erzeugt nur eine Statusmeldung. Bei den Standardwerten wird ein Netzwechsel
+zurück ins Heimnetz spätestens nach rund 60 Sekunden zuzüglich Auflösungs- und
+Verbindungszeit erkannt.
+
+`allow_nonlocal_addresses = true` ist eine explizite, standardmäßig deaktivierte
+Ausnahme für bewusst eingerichtete Remote- oder VPN-Nutzung. Sie erlaubt auch
+öffentlich routbare Auflösungen, behält aber DNS-Pinning, Protokollgrenzen und
+Credential-Trennung bei. Da der fest konfigurierte TR-064-Endpunkt weiterhin
+unverschlüsseltes HTTP verwendet, darf die Ausnahme nicht als sichere
+Internetfreigabe verstanden werden; sie setzt ein vertrauenswürdiges,
+anderweitig geschütztes Zielnetz voraus.
 
 Das Passwort wird im Default-Keyring unter dem Schema
 `org.fritzmonitor.Tr064Credentials` und den Attributen Anwendung, Host und
@@ -182,6 +233,24 @@ FritzMonitor unterstützt neben dem normalen Start folgende Optionen:
   Terminalanzeige und speichert es im Secret Service.
 - `--migrate-tr064-password` übernimmt ein vorhandenes TOML-Passwort in den
   Secret Service und entfernt den Klartext erst nach erfolgreicher Prüfung.
+
+Außerhalb des Heimnetzes ist eine einzelne Journalmeldung mit
+`untrusted address` normal, sofern `fritz.box` dort öffentlich aufgelöst wird.
+Der Dienst bleibt aktiv und prüft mit Backoff weiter. Diagnose und Rückkehrtest:
+
+```sh
+getent ahosts fritz.box
+systemctl --user status fritzmonitor.service
+journalctl --user -u fritzmonitor.service -n 30 --no-pager
+journalctl --user -u fritzmonitor.service -f
+```
+
+Unterwegs darf keine `connected to`-Meldung für eine öffentliche Adresse folgen.
+Nach dem Wechsel ins Heimnetz müssen `getent` ausschließlich erlaubte lokale
+Adressen und das Journal innerhalb des maximalen Intervalls
+`connected to fritz.box:1012` zeigen. Für den positiven Livetest sollte
+anschließend ein Testanruf erfolgen; bei aktivierter Telefonbuchfunktion muss
+zudem `loaded ... phonebooks` erscheinen und der Name im Tray aufgelöst werden.
 
 Fehlen die Desktop-Bibliotheken beim Build, wird weiterhin ein Headless-Binary
 für Parser- und Netzwerktests erzeugt. Die vollständige Tray-Funktion benötigt

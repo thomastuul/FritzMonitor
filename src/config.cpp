@@ -58,6 +58,8 @@ Config load_config(const std::filesystem::path& path) {
       if (key == "host") config.host = value_of(value);
       else if (key == "port") config.port = std::stoi(value_of(value));
       else if (key == "reconnect_seconds") config.reconnect_seconds = std::stoi(value_of(value));
+      else if (key == "reconnect_max_seconds") config.reconnect_max_seconds = std::stoi(value_of(value));
+      else if (key == "allow_nonlocal_addresses") config.allow_nonlocal_addresses = boolean_value(value);
       else if (key == "max_events") config.max_events = std::stoi(value_of(value));
       else if (key == "notify_incoming") config.notify_incoming = boolean_value(value);
       else if (key == "notify_missed") config.notify_missed = boolean_value(value);
@@ -74,6 +76,8 @@ Config load_config(const std::filesystem::path& path) {
   }
   if (config.port < 1 || config.port > 65535) throw std::runtime_error("port out of range");
   if (config.reconnect_seconds < 1) throw std::runtime_error("reconnect_seconds must be positive");
+  if (config.reconnect_max_seconds < config.reconnect_seconds)
+    throw std::runtime_error("reconnect_max_seconds must not be smaller than reconnect_seconds");
   if (config.max_events < 1) throw std::runtime_error("max_events must be positive");
   if (config.tr064_port < 1 || config.tr064_port > 65535) throw std::runtime_error("tr064_port out of range");
   if (const char* username = std::getenv("FRITZMONITOR_TR064_USERNAME"); username && config.tr064_username.empty())
