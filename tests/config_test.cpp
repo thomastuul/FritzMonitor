@@ -13,12 +13,15 @@ int main() {
   {
     std::ofstream output(path);
     output << "host = \"router.local\"\nport = 1012\nnotify_missed = false\n"
+              "reconnect_max_seconds = 90\nallow_nonlocal_addresses = true\n"
               "tr064_password = \"legacy-secret\"\n";
   }
   const auto config = load_config(path);
   assert(config.host == "router.local");
   assert(config.port == 1012);
   assert(!config.notify_missed);
+  assert(config.reconnect_max_seconds == 90);
+  assert(config.allow_nonlocal_addresses);
   assert(config.tr064_password == "legacy-secret");
   assert(config.tr064_password_from_config);
 

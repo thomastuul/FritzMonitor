@@ -11,6 +11,12 @@ FRITZ!Box-Callmonitor. Er verbindet sich über TCP mit Port `1012`, meldet
 eingehende Anrufe per Desktop-Benachrichtigung und zeigt den Anrufstatus im
 Tray.
 
+Außerhalb des Heimnetzes bleibt FritzMonitor aktiv, verbindet sich aber
+standardmäßig ausschließlich mit lokalen Zieladressen. Eine öffentliche oder
+gemischte DNS-Antwort für `fritz.box` wird verworfen, bevor Callmonitor- oder
+TR-064-Daten übertragen werden. Nach der Rückkehr ins Heimnetz nimmt das
+Programm die Verbindung ohne manuellen Neustart wieder auf.
+
 Die aktuelle Projektversion steht in `VERSION` und wird von CMake für Binary und
 Pakete übernommen. FritzMonitor wurde erstellt und gestaltet von Thomas Tuul
 zusammen mit OpenAI Codex.
@@ -51,6 +57,8 @@ Die Konfiguration liegt standardmäßig unter:
 host = "fritz.box"
 port = 1012
 reconnect_seconds = 5
+reconnect_max_seconds = 60
+allow_nonlocal_addresses = false
 max_events = 20
 notify_incoming = true
 notify_missed = true
@@ -59,6 +67,28 @@ addressbook_enabled = true
 tr064_port = 49000
 tr064_username = "fritzmonitor"
 ```
+
+Erlaubt sind standardmäßig private IPv4-Adressen (`10/8`, `172.16/12` und
+`192.168/16`), IPv4-Link-Local und Loopback sowie IPv6-ULA, IPv6-Link-Local und
+Loopback. Sämtliche Adressen einer DNS-Antwort müssen erlaubt sein. Die geprüfte
+Antwort wird für den anschließenden Socket- beziehungsweise libcurl-Aufruf
+festgeschrieben, sodass keine zweite, abweichende Auflösung stattfinden kann.
+Auch eine von TR-064 gelieferte Telefonbuch-URL wird erneut geprüft; sie darf
+nur HTTP(S) verwenden, wird nicht über einen Proxy oder Redirect abgerufen und
+erhält nie die TR-064-Zugangsdaten.
+
+`reconnect_seconds` ist das erste Wiederholungsintervall. Bei anhaltender
+Nichterreichbarkeit wächst es bis `reconnect_max_seconds`; pro Ausfallphase wird
+nur eine Statusmeldung geschrieben. Der Standardwert von 60 Sekunden begrenzt
+damit zugleich die Wartezeit bis zur Erkennung des wieder verfügbaren
+Heimnetzes.
+
+Die Ausnahme `allow_nonlocal_addresses = true` hebt die Adressgrenze bewusst für
+ungewöhnliche Remote- oder VPN-Konfigurationen auf. Sie ist standardmäßig
+deaktiviert und sollte nur verwendet werden, wenn Routing und Zielnetz selbst
+vertrauenswürdig abgesichert sind. Insbesondere bleibt TR-064 über `http://`
+unverschlüsselt; eine Freigabe für beliebige Internetziele ist daher nicht
+sicher.
 
 Das TR-064-Passwort wird standardmäßig geschützt im Secret Service des Desktops
 gespeichert und kann beispielsweise mit Seahorse verwaltet werden. Bei einer
@@ -129,6 +159,13 @@ Die installierte Version lässt sich prüfen:
 ```sh
 fritzmonitor --version
 ```
+
+Unterwegs ist eine einzelne Meldung
+`FRITZ!Box unavailable (untrusted address ...); retrying ...` erwartbar.
+Wiederholt sie sich nicht und bleibt der Prozess aktiv, arbeitet die
+Schutzgrenze wie vorgesehen. Zur Diagnose dienen `getent ahosts fritz.box` und
+`journalctl --user -u fritzmonitor.service -n 30 --no-pager`. Nach der Rückkehr
+ins Heimnetz muss das Journal wieder `connected to fritz.box:1012` melden.
 
 Der produktive Native-Build ohne Paketierung bleibt:
 

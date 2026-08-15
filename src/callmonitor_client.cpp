@@ -1,47 +1,90 @@
 #include "callmonitor_client.hpp"
 
-#include <arpa/inet.h>
 #include <cerrno>
-#include <cstring>
+#include <chrono>
+#include <fcntl.h>
 #include <iostream>
-#include <netdb.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
 
 namespace fritzmonitor {
+namespace {
 
-CallmonitorClient::CallmonitorClient(Config config, EventCallback callback)
-    : config_(std::move(config)), callback_(std::move(callback)) {}
+bool connect_with_timeout(int descriptor, const SocketAddress& address) {
+  const int flags = fcntl(descriptor, F_GETFL, 0);
+  if (flags < 0 || fcntl(descriptor, F_SETFL, flags | O_NONBLOCK) != 0)
+    return false;
+  const auto* socket_address =
+      reinterpret_cast<const sockaddr*>(&address.storage);
+  if (connect(descriptor, socket_address, address.length) == 0) {
+    fcntl(descriptor, F_SETFL, flags);
+    return true;
+  }
+  if (errno != EINPROGRESS) return false;
+  pollfd pending{descriptor, POLLOUT, 0};
+  int status;
+  do {
+    status = poll(&pending, 1, 3000);
+  } while (status < 0 && errno == EINTR);
+  if (status <= 0) return false;
+  int socket_error = 0;
+  socklen_t error_length = sizeof(socket_error);
+  if (getsockopt(descriptor, SOL_SOCKET, SO_ERROR, &socket_error,
+                 &error_length) != 0 ||
+      socket_error != 0)
+    return false;
+  return fcntl(descriptor, F_SETFL, flags) == 0;
+}
+
+}  // namespace
+
+CallmonitorClient::CallmonitorClient(Config config, EventCallback callback,
+                                     AddressResolver resolver)
+    : config_(std::move(config)),
+      callback_(std::move(callback)),
+      resolver_(std::move(resolver)) {}
 
 int CallmonitorClient::run() {
+  RetryBackoff backoff(config_.reconnect_seconds,
+                       config_.reconnect_max_seconds);
+  FailureLogState failure_log;
   for (;;) {
-    addrinfo hints{};
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_UNSPEC;
-    addrinfo* result = nullptr;
-    const auto port = std::to_string(config_.port);
-    const int lookup = getaddrinfo(config_.host.c_str(), port.c_str(), &hints, &result);
-    if (lookup != 0) {
-      std::cerr << "FRITZ!Box lookup failed: " << gai_strerror(lookup) << '\n';
-      std::this_thread::sleep_for(std::chrono::seconds(config_.reconnect_seconds));
-      continue;
+    ResolvedTarget target;
+    std::string failure;
+    try {
+      target = resolve_trusted_target(
+          config_.host, static_cast<std::uint16_t>(config_.port),
+          config_.allow_nonlocal_addresses, resolver_);
+    } catch (const TargetResolutionError& error) {
+      failure = error.what();
     }
 
     int socket_fd = -1;
-    for (auto* address = result; address; address = address->ai_next) {
-      socket_fd = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-      if (socket_fd >= 0 && connect(socket_fd, address->ai_addr, address->ai_addrlen) == 0) break;
-      if (socket_fd >= 0) close(socket_fd);
-      socket_fd = -1;
+    if (failure.empty()) {
+      for (const auto& address : target.addresses) {
+        const auto* raw = reinterpret_cast<const sockaddr*>(&address.storage);
+        socket_fd = socket(raw->sa_family, address.socket_type, address.protocol);
+        if (socket_fd >= 0 && connect_with_timeout(socket_fd, address)) break;
+        if (socket_fd >= 0) close(socket_fd);
+        socket_fd = -1;
+      }
+      if (socket_fd < 0) failure = "connection failed";
     }
-    freeaddrinfo(result);
+
     if (socket_fd < 0) {
-      std::cerr << "FRITZ!Box connection failed; retrying\n";
-      std::this_thread::sleep_for(std::chrono::seconds(config_.reconnect_seconds));
+      const int delay = backoff.next_delay_seconds();
+      if (failure_log.begin_failure())
+        std::cerr << "fritzmonitor: FRITZ!Box unavailable (" << failure
+                  << "); retrying with backoff up to "
+                  << config_.reconnect_max_seconds << " seconds\n";
+      std::this_thread::sleep_for(std::chrono::seconds(delay));
       continue;
     }
 
+    failure_log.recovered();
+    backoff.reset();
     std::cerr << "connected to " << config_.host << ':' << config_.port << '\n';
     std::string buffer;
     char chunk[1024];
@@ -58,7 +101,8 @@ int CallmonitorClient::run() {
     }
     close(socket_fd);
     std::cerr << "FRITZ!Box connection closed; retrying\n";
-    std::this_thread::sleep_for(std::chrono::seconds(config_.reconnect_seconds));
+    std::this_thread::sleep_for(
+        std::chrono::seconds(backoff.next_delay_seconds()));
   }
 }
 

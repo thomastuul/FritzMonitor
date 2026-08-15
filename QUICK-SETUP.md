@@ -67,6 +67,8 @@ Empfohlen wird eine Konfiguration ohne Klartext-Passwort:
 host = "fritz.box"
 port = 1012
 reconnect_seconds = 5
+reconnect_max_seconds = 60
+allow_nonlocal_addresses = false
 max_events = 20
 notify_incoming = true
 notify_missed = true
@@ -74,6 +76,16 @@ addressbook_enabled = true
 tr064_port = 49000
 tr064_username = "fritzmonitor"
 ```
+
+Die sichere Voreinstellung akzeptiert für Callmonitor und TR-064 nur private
+beziehungsweise lokale IPv4-Adressen sowie IPv6-ULA, Link-Local und Loopback.
+Öffentliche und gemischte DNS-Antworten werden vollständig verworfen. Die
+geprüfte Adresse wird beim Verbindungsaufbau festgeschrieben; auch die von
+TR-064 gelieferte Telefonbuch-URL wird separat geprüft und erhält keine
+TR-064-Zugangsdaten. `allow_nonlocal_addresses` sollte deshalb auf `false`
+bleiben. Die explizite Ausnahme `true` ist nur für ein anderweitig abgesichertes
+Remote- oder VPN-Ziel vorgesehen; TR-064 über HTTP wird dadurch nicht
+verschlüsselt.
 
 Bei einer FRITZ!Box-Anmeldung ohne Benutzernamen wird stattdessen Folgendes
 eingetragen:
@@ -138,6 +150,20 @@ systemctl --user enable --now fritzmonitor.service
 systemctl --user status fritzmonitor.service
 journalctl --user -u fritzmonitor.service -n 30 --no-pager
 ```
+
+Außerhalb des Heimnetzes bleibt der Dienst absichtlich aktiv. Er schreibt nur
+eine Ausfallmeldung und erhöht das Wiederholungsintervall von
+`reconnect_seconds` bis höchstens `reconnect_max_seconds`. Nach der Rückkehr
+stellt er Callmonitor und eine zuvor fehlgeschlagene Telefonbuchabfrage ohne
+Neustart wieder her. Prüfen lässt sich das mit:
+
+```sh
+getent ahosts fritz.box
+journalctl --user -u fritzmonitor.service -f
+```
+
+Im Heimnetz müssen ausschließlich erwartete lokale Adressen erscheinen; das
+Journal meldet anschließend `connected to fritz.box:1012`.
 
 Die installierte Version lässt sich unabhängig vom Dienst prüfen:
 
