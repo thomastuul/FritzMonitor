@@ -55,23 +55,56 @@ namespace {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
 void quit_application(GtkWidget*, gpointer) { gtk_main_quit(); }
 GtkWidget* history_menu = nullptr;
+GtkWidget* connection_status_item = nullptr;
 AppIndicator* indicator = nullptr;
 std::deque<GtkWidget*> call_items;
 bool notifications_initialized = false;
 bool notifications_available = false;
+bool connection_available = false;
+bool has_unread_call = false;
 
-void set_indicator_icon(bool has_unread_call) {
-  app_indicator_set_icon_full(indicator,
-                              has_unread_call ? "fritzmonitor-phone-red" : "fritzmonitor-phone-green",
-                              german_locale()
-                                  ? (has_unread_call ? "Ungelesener eingehender Anruf" : "Keine ungelesenen Anrufe")
-                                  : (has_unread_call ? "Unread incoming call" : "No unread calls"));
+void refresh_indicator() {
+  const char* icon;
+  const char* description;
+  const char* status_label;
+  if (!connection_available) {
+    icon = "fritzmonitor-phone-yellow";
+    description = german_locale() ? "Keine Verbindung zur FRITZ!Box"
+                                  : "No connection to FRITZ!Box";
+    status_label = german_locale() ? "Nicht mit FRITZ!Box verbunden"
+                                   : "Not connected to FRITZ!Box";
+  } else if (has_unread_call) {
+    icon = "fritzmonitor-phone-red";
+    description = german_locale() ? "Ungelesener eingehender Anruf"
+                                  : "Unread incoming call";
+    status_label = german_locale() ? "Verbunden mit FRITZ!Box"
+                                   : "Connected to FRITZ!Box";
+  } else {
+    icon = "fritzmonitor-phone-green";
+    description = german_locale() ? "Keine ungelesenen Anrufe"
+                                  : "No unread calls";
+    status_label = german_locale() ? "Verbunden mit FRITZ!Box"
+                                   : "Connected to FRITZ!Box";
+  }
+  app_indicator_set_icon_full(indicator, icon, description);
+  if (connection_status_item)
+    gtk_menu_item_set_label(GTK_MENU_ITEM(connection_status_item), status_label);
 }
 
-void menu_shown(GtkWidget*, gpointer) { set_indicator_icon(false); }
+void menu_shown(GtkWidget*, gpointer) {
+  has_unread_call = false;
+  refresh_indicator();
+}
+
+enum class IndicatorUpdate { MarkUnread = 1, Connected, Disconnected };
 
 gboolean update_indicator_icon(gpointer data) {
-  set_indicator_icon(GPOINTER_TO_INT(data) != 0);
+  switch (static_cast<IndicatorUpdate>(GPOINTER_TO_INT(data))) {
+    case IndicatorUpdate::MarkUnread: has_unread_call = true; break;
+    case IndicatorUpdate::Connected: connection_available = true; break;
+    case IndicatorUpdate::Disconnected: connection_available = false; break;
+  }
+  refresh_indicator();
   return G_SOURCE_REMOVE;
 }
 
@@ -126,13 +159,14 @@ Desktop::Desktop() {
   if (!notifications_available) {
     std::cerr << "fritzmonitor: desktop notification service unavailable; continuing without notifications\n";
   }
-  indicator = app_indicator_new("fritzmonitor", "fritzmonitor-phone-green", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+  indicator = app_indicator_new("fritzmonitor", "fritzmonitor-phone-yellow", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
   auto* menu = gtk_menu_new();
   history_menu = menu;
   g_signal_connect(menu, "show", G_CALLBACK(menu_shown), nullptr);
-  const auto status_label = german_locale() ? "Verbunden mit FRITZ!Box" : "Connected to FRITZ!Box";
+  const auto status_label = german_locale() ? "Nicht mit FRITZ!Box verbunden" : "Not connected to FRITZ!Box";
   auto* status = gtk_menu_item_new_with_label(status_label);
+  connection_status_item = status;
   gtk_widget_set_sensitive(status, FALSE);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), status);
   auto* separator = gtk_separator_menu_item_new();
@@ -142,7 +176,7 @@ Desktop::Desktop() {
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit);
   gtk_widget_show_all(menu);
   app_indicator_set_menu(indicator, GTK_MENU(menu));
-  set_indicator_icon(false);
+  refresh_indicator();
 #endif
 }
 
@@ -169,7 +203,19 @@ void Desktop::notify(const CallEvent& event) {
 
 void Desktop::mark_incoming_call() {
 #ifdef FRITZMONITOR_HAVE_DESKTOP
-  g_idle_add(update_indicator_icon, GINT_TO_POINTER(1));
+  g_idle_add(update_indicator_icon,
+             GINT_TO_POINTER(static_cast<int>(IndicatorUpdate::MarkUnread)));
+#endif
+}
+
+void Desktop::set_connection_available(bool available) {
+#ifdef FRITZMONITOR_HAVE_DESKTOP
+  const auto update = available ? IndicatorUpdate::Connected
+                                : IndicatorUpdate::Disconnected;
+  g_idle_add(update_indicator_icon,
+             GINT_TO_POINTER(static_cast<int>(update)));
+#else
+  (void)available;
 #endif
 }
 

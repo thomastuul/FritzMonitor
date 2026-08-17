@@ -177,7 +177,11 @@ int main(int argc, char** argv) {
       return 0;
     }
     std::thread phonebook_thread([&phonebook] { phonebook.run(); });
-    CallmonitorClient client(config, callback);
+    CallmonitorClient client(
+        config, callback, system_resolve,
+        [&desktop](bool available) {
+          desktop.set_connection_available(available);
+        });
 #ifdef FRITZMONITOR_HAVE_DESKTOP
     std::thread network_thread([&client] { client.run(); });
     desktop.run();

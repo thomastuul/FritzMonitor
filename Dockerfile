@@ -32,5 +32,6 @@ COPY --from=builder /src/build/fritzmonitor /fritzmonitor
 COPY --from=builder /src/build/fritzmonitor.service /fritzmonitor.service
 COPY --from=builder /src/assets/fritzmonitor-phone-green.svg /fritzmonitor-phone-green.svg
 COPY --from=builder /src/assets/fritzmonitor-phone-red.svg /fritzmonitor-phone-red.svg
+COPY --from=builder /src/assets/fritzmonitor-phone-yellow.svg /fritzmonitor-phone-yellow.svg
 
 CMD ["/fritzmonitor"]

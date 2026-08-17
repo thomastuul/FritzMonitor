@@ -155,7 +155,10 @@ Außerhalb des Heimnetzes bleibt der Dienst absichtlich aktiv. Er schreibt nur
 eine Ausfallmeldung und erhöht das Wiederholungsintervall von
 `reconnect_seconds` bis höchstens `reconnect_max_seconds`. Nach der Rückkehr
 stellt er Callmonitor und eine zuvor fehlgeschlagene Telefonbuchabfrage ohne
-Neustart wieder her. Prüfen lässt sich das mit:
+Neustart wieder her. Solange keine Verbindung zum Callmonitor besteht, ist das
+Telefonhörer-Icon gelb. Nach erfolgreicher Wiederverbindung wird es grün oder,
+falls noch ein ungelesener eingehender Anruf vorliegt, rot. Prüfen lässt sich
+das mit:
 
 ```sh
 getent ahosts fritz.box
