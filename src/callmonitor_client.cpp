@@ -41,15 +41,18 @@ bool connect_with_timeout(int descriptor, const SocketAddress& address) {
 }  // namespace
 
 CallmonitorClient::CallmonitorClient(Config config, EventCallback callback,
-                                     AddressResolver resolver)
+                                     AddressResolver resolver,
+                                     ConnectionCallback connection_callback)
     : config_(std::move(config)),
       callback_(std::move(callback)),
-      resolver_(std::move(resolver)) {}
+      resolver_(std::move(resolver)),
+      connection_callback_(std::move(connection_callback)) {}
 
 int CallmonitorClient::run() {
   RetryBackoff backoff(config_.reconnect_seconds,
                        config_.reconnect_max_seconds);
   FailureLogState failure_log;
+  if (connection_callback_) connection_callback_(false);
   for (;;) {
     ResolvedTarget target;
     std::string failure;
@@ -86,6 +89,7 @@ int CallmonitorClient::run() {
     failure_log.recovered();
     backoff.reset();
     std::cerr << "connected to " << config_.host << ':' << config_.port << '\n';
+    if (connection_callback_) connection_callback_(true);
     std::string buffer;
     char chunk[1024];
     while (true) {
@@ -100,6 +104,7 @@ int CallmonitorClient::run() {
       }
     }
     close(socket_fd);
+    if (connection_callback_) connection_callback_(false);
     std::cerr << "FRITZ!Box connection closed; retrying\n";
     std::this_thread::sleep_for(
         std::chrono::seconds(backoff.next_delay_seconds()));

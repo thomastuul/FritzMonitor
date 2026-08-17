@@ -108,6 +108,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fritzmonitor.service
 install(FILES
   assets/fritzmonitor-phone-green.svg
   assets/fritzmonitor-phone-red.svg
+  assets/fritzmonitor-phone-yellow.svg
   DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
 )
 install(FILES

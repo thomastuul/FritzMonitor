@@ -44,9 +44,12 @@ nicht als Fallback verwendet.
 
 ## Tray-Icon und Anrufstatus
 
-Das Systemtray verwendet ein telefonförmiges FritzMonitor-Icon mit zwei
+Das Systemtray verwendet ein telefonförmiges FritzMonitor-Icon mit drei
 Zuständen:
 
+- Gelb: Es besteht keine Verbindung zum FRITZ!Box-Callmonitor. Nach einer
+  erfolgreichen Wiederverbindung wird der zuvor bestehende grüne oder rote
+  Anrufstatus wieder angezeigt.
 - Grün: Seit dem Start des Monitors ist kein eingehender Anruf eingegangen oder
   alle eingegangenen Anrufe wurden durch das Öffnen des Pulldown-Menüs
   abgefragt.
@@ -54,8 +57,9 @@ Zuständen:
   nicht durch das Öffnen des Pulldown-Menüs abgefragt wurde.
 
 Das Öffnen des Pulldown-Menüs bestätigt den aktuellen Anrufstatus und setzt das
-Icon wieder auf Grün. Die grünen und roten SVG-Icons werden zusammen mit der
-nativen Desktop-Binärdatei installiert.
+Icon bei bestehender Verbindung wieder auf Grün. Ohne Verbindung bleibt es gelb.
+Die grünen, roten und gelben SVG-Icons werden zusammen mit der nativen
+Desktop-Binärdatei installiert.
 
 Das Pulldown-Menü zeigt pro Anruf genau eine Zeile in dieser Reihenfolge:
 

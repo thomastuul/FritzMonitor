@@ -19,6 +19,7 @@ class Desktop {
   ~Desktop();
   void notify(const CallEvent& event);
   void mark_incoming_call();
+  void set_connection_available(bool available);
   void record_call(const CallSummary& call);
   void run();
 };

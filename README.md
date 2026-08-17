@@ -23,9 +23,10 @@ zusammen mit OpenAI Codex.
 
 ![Systemtray mit FritzMonitor](docs/images/fritzmonitor-systemtray.png)
 
-Das telefonförmige Icon ist grün, solange keine ungelesenen eingehenden Anrufe
-vorliegen. Nach einem eingehenden Anruf wird es rot; das Öffnen des Menüs
-markiert die Anrufe als gelesen.
+Das telefonförmige Icon ist gelb, solange keine Verbindung zur FRITZ!Box
+besteht. Bei bestehender Verbindung ist es grün, solange keine ungelesenen
+eingehenden Anrufe vorliegen. Nach einem eingehenden Anruf wird es rot; das
+Öffnen des Menüs markiert die Anrufe als gelesen.
 
 ## Pulldown-Menü
 
